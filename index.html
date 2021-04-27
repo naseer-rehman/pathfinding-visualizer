@@ -1,0 +1,160 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Pathfinder</title>
+    <meta name="description" content="An application for visualizing popular path-finding algorithms.">
+    <meta name="author" content="Naseer Rehman">
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="mainToolbar" class="main-toolbar">
+        <button id="toolbarOpener" class="toolbar-opener">
+            <svg class="" xmlns="http://www.w3.org/2000/svg" width="15" height="13" viewBox="0 0 15 13">
+                <path data-name="Polygon 1" d="M7.5 0 15 13H0Z"/>
+            </svg>
+            <div class="bottom-cover"></div>
+        </button>
+        <div class="buttons">
+            <div class="playback-buttons-container">
+                <div class="half-container top-half">
+                    <button id="speedScaleButton" class="main-button small-button">
+                        <div class="speed-scale-label no-select">1.0x</div>
+                    </button>
+                </div>
+                <div class="half-container bottom-half">
+                    <button id="skipBackwardButton" class="main-button small-button disabled-button">
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+                        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                            viewBox="0 0 58.5 52" enable-background="new 0 0 58.5 52" xml:space="preserve">
+                        <polygon fill-rule="evenodd" clip-rule="evenodd" points="55.9,26.2 27.7,1.4 27.7,14.3 1.1,14.3 1.1,38.3 27.7,38.3 27.7,51.1 "/>
+                        </svg>
+                    </button>
+                    <button id="skipForwardButton" class="main-button small-button disabled-button">
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+                        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                            viewBox="0 0 58.5 52" enable-background="new 0 0 58.5 52" xml:space="preserve">
+                        <polygon fill-rule="evenodd" clip-rule="evenodd" points="55.9,26.2 27.7,1.4 27.7,14.3 1.1,14.3 1.1,38.3 27.7,38.3 27.7,51.1 "/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="main-buttons-container">
+                <button id="playButton" class="main-button active-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="164" height="164" viewBox="0 0 163.9 163.9"><path d="M34.9 3.6C20.1-4.9 8.1 2.1 8.1 19.1v125.6c0 17 12 24 26.8 15.5L144.7 97.3c14.8-8.5 14.8-22.2 0-30.7L34.9 3.6z"/></svg>
+                </button>
+                <button id="markerButton" class="main-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 45.4 45.4">
+                        <path d="M22.7 0C12.5 0 4.3 8.2 4.3 18.4c0 9.2 11.5 21.4 16.3 26.1 1.2 1.2 3.1 1.2 4.3 0 4.9-4.5 16.3-16.2 16.3-26.1C41.1 8.2 32.8 0 22.7 0zM22.7 24.4c-4.2 0-7.6-3.4-7.6-7.6s3.4-7.6 7.6-7.6c4.2 0 7.6 3.4 7.6 7.6S26.9 24.4 22.7 24.4z"/>
+                    </svg>
+                </button>
+                <button id="goalButton" class="main-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M266.8 245.7c-0.1-0.1-0.1-0.2-0.2-0.3l-85.6-85.6v-53.8c0-4-1.6-7.8-4.4-10.6l-90-91C82.3 0.1 75.9-1.2 70.3 1.1c-5.6 2.3-9.3 7.8-9.3 13.9v45h-46C8.9 60 3.5 63.6 1.1 69.3c-2.3 5.6-1 12.1 3.3 16.3l91 91c2.8 2.8 6.6 4.4 10.6 4.4h53.8l85.6 85.6c0.1 0.1 0.2 0.1 0.3 0.2 5.8 5.6 14.7 5.6 20.6 0C272.5 260.9 272.4 251.6 266.8 245.7z"/><path d="M256 0c-38.4 0-74.7 9.8-107.3 25l46 46c19.3-6.4 39.9-10 61.3-10C363.5 61 451 148.5 451 256s-87.5 195-195 195S61 363.5 61 256c0-21.4 3.6-42 10-61.3l-46-46C9.8 181.3 0 217.6 0 256c0 140.6 115.4 256 256 256S512 396.6 512 256 396.6 0 256 0z"/><path d="M256 121c-15.9 0-30.9 3.3-45 8.3v18.1l34.7 34.7c3.4-0.5 6.8-1 10.3-1 41.4 0 75 33.6 75 75 0 41.4-33.6 75-75 75 -41.4 0-75-33.6-75-75 0-3.5 0.6-6.9 1-10.3L147.4 211h-18.1c-5 14.1-8.3 29.1-8.3 45 0 74.4 60.6 135 135 135S391 330.4 391 256 330.4 121 256 121z"/></svg>
+                </button>
+                <button id="wallButton" class="main-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234.8 234.8"><path d="M7.5 54c-4.1 0-7.5-3.4-7.5-7.5V20.6c0-4.1 3.4-7.5 7.5-7.5h94.9c4.1 0 7.5 3.4 7.5 7.5v25.9c0 4.1-3.4 7.5-7.5 7.5H7.5zM227.3 54c4.1 0 7.5-3.4 7.5-7.5V20.6c0-4.1-3.4-7.5-7.5-7.5h-94.9c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H227.3zM164.9 109.9c4.1 0 7.5-3.4 7.5-7.5V76.5c0-4.1-3.4-7.5-7.5-7.5H70c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H164.9zM40 109.9c4.1 0 7.5-3.4 7.5-7.5V76.5c0-4.1-3.4-7.5-7.5-7.5H8c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H40zM226.8 109.9c4.1 0 7.5-3.4 7.5-7.5V76.5c0-4.1-3.4-7.5-7.5-7.5h-31.9c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H226.8zM102.4 165.8c4.1 0 7.5-3.4 7.5-7.5v-25.9c0-4.1-3.4-7.5-7.5-7.5H7.5c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H102.4zM227.3 165.8c4.1 0 7.5-3.4 7.5-7.5v-25.9c0-4.1-3.4-7.5-7.5-7.5h-94.9c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H227.3zM164.9 221.7c4.1 0 7.5-3.4 7.5-7.5v-25.9c0-4.1-3.4-7.5-7.5-7.5H70c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H164.9zM40 221.7c4.1 0 7.5-3.4 7.5-7.5v-25.9c0-4.1-3.4-7.5-7.5-7.5H8c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H40zM226.8 221.7c4.1 0 7.5-3.4 7.5-7.5v-25.9c0-4.1-3.4-7.5-7.5-7.5h-31.9c-4.1 0-7.5 3.4-7.5 7.5v25.9c0 4.1 3.4 7.5 7.5 7.5H226.8z"/></svg>
+                </button>
+                <button id="clearButton" class="main-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384"><path d="M64 341.3C64 364.9 83.1 384 106.7 384h170.7C300.9 384 320 364.9 320 341.3v-256H64V341.3z"/><polygon points="266.7 21.3 245.3 0 138.7 0 117.3 21.3 42.7 21.3 42.7 64 341.3 64 341.3 21.3 "/></svg>
+                </button>
+                <button id="settingsButton" class="main-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M490.7 405.3h-56.8C424.6 374.6 396.4 352 362.7 352s-61.9 22.6-71.2 53.3H21.3C9.6 405.3 0 414.9 0 426.7S9.6 448 21.3 448h270.1c9.2 30.7 37.5 53.3 71.2 53.3s61.9-22.6 71.2-53.3h56.8c11.8 0 21.3-9.6 21.3-21.3S502.5 405.3 490.7 405.3zM362.7 458.7c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32S380.3 458.7 362.7 458.7z"/><path d="M490.7 64h-56.8c-9.3-30.7-37.5-53.3-71.2-53.3S300.7 33.3 291.5 64H21.3C9.6 64 0 73.6 0 85.3s9.6 21.3 21.3 21.3h270.1C300.7 137.4 329 160 362.7 160s61.9-22.6 71.2-53.3h56.8c11.8 0 21.3-9.6 21.3-21.3S502.5 64 490.7 64zM362.7 117.3c-17.6 0-32-14.4-32-32 0-17.6 14.4-32 32-32s32 14.4 32 32C394.7 103 380.3 117.3 362.7 117.3z"/><path d="M490.7 234.7H220.5c-9.3-30.7-37.5-53.3-71.2-53.3s-61.9 22.6-71.2 53.3H21.3C9.6 234.7 0 244.2 0 256c0 11.8 9.6 21.3 21.3 21.3h56.8c9.3 30.7 37.5 53.3 71.2 53.3s61.9-22.6 71.2-53.3h270.1c11.8 0 21.3-9.6 21.3-21.3C512 244.2 502.5 234.7 490.7 234.7zM149.3 288c-17.6 0-32-14.4-32-32s14.4-32 32-32c17.6 0 32 14.4 32 32S167 288 149.3 288z"/></svg>
+                </button>
+                <button id="infoButton" class="main-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M257 0C116.4 0 0 114.4 0 255s116.4 257 257 257 255-116.4 255-257S397.6 0 257 0zM287 392c0 16.5-13.5 30-30 30 -16.5 0-30-13.5-30-30V240c0-16.5 13.5-30 30-30 16.5 0 30 13.5 30 30V392zM257 150c-16.5 0-30-13.5-30-30s13.5-30 30-30c16.5 0 30 13.5 30 30S273.5 150 257 150z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="clear-prompt hidden">
+        <button class="close-prompt">
+            <svg xmlns="http://www.w3.org/2000/svg" height="329" viewBox="0 0 329.3 329" width="329"><path d="m194.8 164.8 128.2-128.2c8.3-8.3 8.3-21.8 0-30.2-8.3-8.3-21.8-8.3-30.2 0l-128.2 128.2-128.2-128.2c-8.3-8.3-21.8-8.3-30.2 0-8.3 8.3-8.3 21.8 0 30.2l128.2 128.2-128.2 128.2c-8.3 8.3-8.3 21.8 0 30.2 4.2 4.2 9.6 6.3 15.1 6.3 5.5 0 10.9-2.1 15.1-6.2l128.2-128.2 128.2 128.2c4.2 4.2 9.6 6.3 15.1 6.3 5.5 0 10.9-2.1 15.1-6.2 8.3-8.3 8.3-21.8 0-30.2zm0 0"/></svg>
+        </button>
+        <h3 class="prompt-title no-select">
+            Do you want to clear everything?
+        </h3>
+        <div class="clear-prompt-button-container">
+            <button id="clearEverythingButton" class="main-button">
+                <p class="no-select">Everything</p>
+            </button>
+            <button id="clearWallsButton" class="main-button">
+                <p class="no-select">Walls only</p>
+            </button>
+        </div>
+    </div>
+
+    <div class="settings-prompt hidden">
+        <button class="close-prompt">
+            <svg xmlns="http://www.w3.org/2000/svg" height="329" viewBox="0 0 329.3 329" width="329"><path d="m194.8 164.8 128.2-128.2c8.3-8.3 8.3-21.8 0-30.2-8.3-8.3-21.8-8.3-30.2 0l-128.2 128.2-128.2-128.2c-8.3-8.3-21.8-8.3-30.2 0-8.3 8.3-8.3 21.8 0 30.2l128.2 128.2-128.2 128.2c-8.3 8.3-8.3 21.8 0 30.2 4.2 4.2 9.6 6.3 15.1 6.3 5.5 0 10.9-2.1 15.1-6.2l128.2-128.2 128.2 128.2c4.2 4.2 9.6 6.3 15.1 6.3 5.5 0 10.9-2.1 15.1-6.2 8.3-8.3 8.3-21.8 0-30.2zm0 0"/></svg>
+        </button>
+        <h3 class="prompt-title no-select">
+            Settings
+        </h3>
+        <div class="prompt-content">
+            <div class="content-row no-select">
+                <div class="content-row-left-half">
+                    <p class="dropdown-label">Algorithm:</p>
+                </div>
+                <div class="content-row-right-half">
+                    <div class="dropdown" data-setting="algorithm">
+                        <div class="active-dropdown-background">
+                            <div class="active-dropdown-value">
+                                Dijkstra
+                            </div>
+                        </div>
+                        <div class="dropdown-options-container hidden">
+                            <div class="dropdown-option" data-value="Dijkstra">
+                                <span class="dropdown-option-label">
+                                    Dijkstra
+                                </span>
+                            </div>
+                            <div class="dropdown-option" data-value="A*">
+                                <span class="dropdown-option-label">
+                                    A*
+                                </span>
+                            </div>
+                            <div class="dropdown-option" data-value="More...">
+                                <span class="dropdown-option-label">
+                                    More...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="content-row no-select">
+                <div class="content-row-left-half">
+                    <p class="dropdown-label">Playback Mode:</p>
+                </div>
+                <div class="content-row-right-half">
+                    <div class="dropdown" data-setting="playbackMode">
+                        <div class="active-dropdown-background">
+                            <div class="active-dropdown-value">
+                                Auto
+                            </div>
+                        </div>
+                        <div class="dropdown-options-container hidden">
+                            <div class="dropdown-option" data-value="Auto">
+                                <span class="dropdown-option-label">
+                                    Auto
+                                </span>
+                            </div>
+                            <div class="dropdown-option" data-value="Step">
+                                <span class="dropdown-option-label">
+                                    Step
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
