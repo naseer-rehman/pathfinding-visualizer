@@ -11,17 +11,60 @@ canvas.height = height;
 // CONSTANTS VARIABLES
 const GRID_BORDER_COLOR = getComputedStyle(document.body).getPropertyValue("--grid-background");
 const GRID_LINE_COLOR = getComputedStyle(document.body).getPropertyValue("--grid-line-color");
-const TILE_SIZE = 38; // Dimensions of the square grid tile.
-const TILE_SIZE_WITH_BORDER = 40;
+const TILE_SIZE = 48; // Dimensions of the square grid tile.
+const TILE_SIZE_WITH_BORDER = 50;
 const FPS = 60 // frames
 const FRAME_TIMING = 1000 / FPS;
+const DEFAULT_WEIGHT = 15; // Default weight for a weight tile.
 // const CANVAS_SIZE - The virtual canvas size
 // const MAX_OFFSET - The max center offset 
 
 
 // VARIABLES
-let centerOffset = null;
+let centerOffset;
+let currentMousePosition;
+let isMouseInViewport;
+let startingTilePosition;
+let goalTilePosition;
+let currentUserState = "idle";
+    // states: idle, placingStartingTile, placingGoalTile, 
+    //         erasingTiles, editingSettings, viewingInfo, 
+    //         stepping, autoPlaying, placingWallTiles,
+    //         placingWeightTiles
 // const SCREEN_CENTER - The screen coordinate of its center
+
+// Images
+const ICON_SIZE = 30;
+const ICON_CORNER_OFFSET = Math.floor((TILE_SIZE - ICON_SIZE) / 2)
+let startingTileIcon = new Image();
+let goalTileIcon = new Image();
+let weightTileIcon = new Image();
+
+startingTileIcon.src = "images/marker-PNG.png";
+goalTileIcon.src = "images/target-PNG.png";
+weightTileIcon.src = "images/weight-PNG.png";
+
+
+// CLASSES
+
+class Color3 {
+    constructor(r, g, b) {
+        this._r = r;
+        this._g = g;
+        this._b = b;
+    }
+    get R() { return this._r; }
+    get G() { return this._g; }
+    get B() { return this._b; }
+    set R(r) { this._r = r; }
+    set G(g) { this._g = g; }
+    set B(b) { this._b = b; } 
+    setRGB(r, g, b) {
+        this.R = r;
+        this.G = g;
+        this.B = b;
+    }
+}
 
 class Vector2 {
     constructor(x = 0, y = 0) {
@@ -50,6 +93,13 @@ class Vector2 {
         return Math.sqrt(delta.x * delta.x + delta.y * delta.y);
     }
 
+    equals(vector2) {
+        if (!(vector2 instanceof Vector2)) {
+            return false;
+        }
+        return this.x == vector2.x && this.y == vector2.y;
+    }
+
     get X() { return this.x; }
     get Y() { return this.y; }
     set X(x) { this.x = x; }
@@ -63,21 +113,77 @@ class Vector2 {
 
 const CANVAS_SIZE = new Vector2(width, height).scale(1.5);
 const MAX_OFFSET = new Vector2((CANVAS_SIZE.getX() - width) / 2, (CANVAS_SIZE.getY() - height) / 2);
+startingTilePosition = new Vector2(-1, -1);
+goalTilePosition = new Vector2(-1, -1);
 centerOffset = new Vector2(0, 0);
+currentMousePosition = new Vector2(-width, -height);
 const SCREEN_CENTER = new Vector2(Math.floor(width / 2), 
                                   Math.floor(height / 2));
 
 class Tile {
-    constructor(color = "rgba(0,0,0,0)") {
-        this._color = color;
+    calculateCSSColor() {
+        this._CSSColor = `rgba(${this.color.R},${this.color.G},${this.color.B},${this._alpha})`;
+        // console.log(this._CSSColor);
     }
 
-    set color(c) {
+    constructor(r, g, b, a) {
+        this._color = new Color3(r, g, b);
+        this._alpha = a; // a = 1 is fully visible, a = 0 is invisible.
+        this.calculateCSSColor();
+        this._hasIcon = false;
+        this._icon = null;
+        this._type = "blank"; // Tile types: blank, wall, start, goal, weight
+    }
+
+    set color(c) { 
+        // console.log(c instanceof Color3);
         this._color = c;
+        this.calculateCSSColor();
     }
 
     get color() {
         return this._color;
+    }
+
+    set alpha(a) {
+        // console.log(`Setting alpha to: ${a}`);
+        this._alpha = a;
+        this.calculateCSSColor();
+    }
+
+    get alpha() {
+        return this._alpha;
+    }
+
+    get CSSColor() {
+        return this._CSSColor;
+    }
+
+    set type(t) {
+        this._type = t;
+    }
+
+    get type() {
+        return this._type;
+    }
+
+    hasIcon() {
+        return this._hasIcon;
+    }
+
+    setIcon(img) {
+        console.assert(img instanceof Image);
+        this._hasIcon = true;
+        this._icon = img;
+    }
+
+    getIcon() {
+        return this._icon;
+    }
+
+    removeIcon() {
+        this._hasIcon = false;
+        this._icon = null;
     }
 }
 
@@ -107,9 +213,12 @@ class Grid {
         this.bottomLeftCorner.Y = relativeCenter.Y + (this.tileGrid.size.Y * (TILE_SIZE + 1)) / 2;
     }
 
-    // Given a tile coordinate (as a Vector2), the function will return screen coordinate
-    //  of the top-left pixel of the specified tile, taking the center-offset into consideration.
-    // note: It may or may not be within the viewport
+    /**
+     * Given a tile coordinate (as a Vector2), the function will return screen coordinate
+     * of the top-left pixel of the specified tile, taking the center-offset into consideration.
+     * @param {Vector2} tileCoordinate 
+     * @returns {Vector2}
+     */
     getScreenCoordinateFromTileCoordinate(tileCoordinate) {
         console.assert(tileCoordinate instanceof Vector2);
         this.calcTopLeftCorner(centerOffset);
@@ -119,7 +228,11 @@ class Grid {
         return calculatedCoordinate;
     }
 
-    // Given a screen coordainte, the function will return the tile that the screen coordinate resides on.
+    /**
+     * Given a screen coordainte, the function will return the tile that the screen coordinate resides on.
+     * @param {Vector2} screenCoordinate 
+     * @returns {Vector2}
+     */
     getTileCoordinateFromScreenCoordinate(screenCoordinate) {
         console.assert(screenCoordinate instanceof Vector2);
         this.calcTopLeftCorner(centerOffset);
@@ -145,20 +258,95 @@ class Grid {
         for (let r = 0; r < this.tileGrid.size.Y; ++r) {
             this.tileGrid.grid[r] = [];
             for (let c = 0; c < this.tileGrid.size.X; ++c) {
-                this.tileGrid.grid[r][c] = new Tile();
+                this.tileGrid.grid[r][c] = new Tile(0,0,0,0);
+            }
+        }
+
+        this.wallGrid = [];
+        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
+            this.wallGrid[r] = [];
+            
+        }
+    }
+
+    /**
+     * Checks if the tile coordinates are valid coordinates on the tile grid.
+     * @param {Int} x 
+     * @param {Int} y 
+     * @returns {Boolean}
+     */
+    isTileCoordinatesOnGrid(x, y) {
+        return (0 <= x && x < this.tileGrid.size.X) && (0 <= y && y < this.tileGrid.size.y);
+    }
+
+    /**
+     * Checks if the screen coordinates is on the displayed tile grid.
+     * @param {Vector2} pos 
+     * @returns {Boolean}
+     */
+    isScreenCoordinatesOnGrid(pos) {
+        let hoverTilePos = this.getTileCoordinateFromScreenCoordinate(pos);
+        return this.isTileCoordinatesOnGrid(hoverTilePos.X, hoverTilePos.Y);
+    }
+
+    /**
+     * Obtains the tile at the position (x, y) on the tile grid.
+     * @param {Int} x 
+     * @param {Int} y 
+     * @returns {Tile}
+     */
+    getTile(x, y) {
+        console.assert(this.isTileCoordinatesOnGrid(x, y));
+        return this.tileGrid.grid[y][x];
+    }
+
+    /**
+     * Set the color of the tile at position (x, y)
+     * @param {Number} x 
+     * @param {Number} y 
+     * @param {Color3} color 
+     * @param {Number} alpha 
+     */
+    setTileColor(x, y, color, alpha) {
+        console.assert(this.isTileCoordinatesOnGrid(x, y));
+        console.assert(color instanceof Color3);
+        let tile = this.getTile(x, y);
+        tile.color = color;
+        tile.alpha = alpha;
+    }
+
+    resetTileColor(x, y) {
+        this.setTileColor(x, y, new Color3(0,0,0), 0);
+    }
+
+    resetAllTiles() {
+        goalTilePosition.X = startingTilePosition.X = -1;
+        goalTilePosition.Y = startingTilePosition.Y = -1;
+        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
+            for (let c = 0; c < this.tileGrid.size.X; ++c) {
+                let tile = this.tileGrid.grid[r][c];
+                tile.type = "blank";
+                if (tile.hasIcon) {
+                    tile.removeIcon();
+                }
+                this.resetTileColor(c, r);
             }
         }
     }
 
-    // Set the color of the tile at position (x, y)
-    setTileColor(x, y, color) {
-        console.assert(0 <= x && x < this.tileGrid.size.X);
-        console.assert(0 <= y && y < this.tileGrid.size.y);
-        this.tileGrid.grid[y][x].color = color;
-    }
-
-    resetTileColor(x, y) {
-        this.setTileColor(x, y, "rgba(0,0,0,0)");
+    resetWallTilesOnly() {
+        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
+            for (let c = 0; c < this.tileGrid.size.X; ++c) {
+                let tile = this.tileGrid.grid[r][c];
+                if (tile.type === "wall" || tile.type === "weight") {
+                    tile.type = "blank";
+                    if (tile.hasIcon) {
+                        tile.removeIcon();
+                    }
+                    this.resetTileColor(c, r);
+                }
+            }
+        }
     }
 
     drawGridLines() {
@@ -229,9 +417,13 @@ class Grid {
         let columnEnd = Math.min(bottomRightTile.X, this.tileGrid.size.X - 1);
         for (let r = rowStart; r <= rowEnd; ++r) {
             for (let c = columnStart; c <= columnEnd; ++c) {
+                let currentTile = this.tileGrid.grid[r][c];
                 let tilePos = this.getScreenCoordinateFromTileCoordinate(new Vector2(c, r));
-                ctx.fillStyle = this.tileGrid.grid[r][c].color;
+                ctx.fillStyle = currentTile.CSSColor;
                 ctx.fillRect(tilePos.X + 2, tilePos.Y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                if (currentTile.hasIcon()) {
+                    ctx.drawImage(currentTile.getIcon(), tilePos.X + ICON_CORNER_OFFSET, tilePos.Y + ICON_CORNER_OFFSET);
+                }
             }
         }
     }
@@ -247,6 +439,20 @@ class Grid {
 const virtualCanvas = new Grid(CANVAS_SIZE.X, CANVAS_SIZE.Y);
 
 // FUNCTIONS
+function changeUserState(state) {
+    currentUserState = state;
+}
+
+
+function getUserState() {
+    return currentUserState;
+}
+
+
+function isUserState(state) {
+    return getUserState() === state;
+}
+
 
 function drawCenterReference() {
     ctx.strokeStyle = "#A57400";
@@ -259,6 +465,7 @@ function drawCenterReference() {
     ctx.closePath();
 }
 
+
 function drawGridToCenterVector() {
     ctx.strokeStyle = "#00B029";
     ctx.beginPath();
@@ -269,42 +476,172 @@ function drawGridToCenterVector() {
 }
 
 
-let topLeftTile = new Vector2(0,0);
-function frameUpdate() {
-    ctx.clearRect(0, 0, width, height);
-    virtualCanvas.draw();
-    drawGridToCenterVector();
-    drawCenterReference();
-}
-
-function disconnectCanvasTranslationEvent() {
+function disconnectMouseEvents() {
     document.onmousedown = null;
     document.onmouseup = null;
     document.onmousemove = null;
 }
 
-function connectCanvasTranslationEvent() {
+
+let mouseEventFunctions = {};
+mouseEventFunctions.resetPreviousStartTile = () => {
+    if (virtualCanvas.isTileCoordinatesOnGrid(startingTilePosition.X, startingTilePosition.Y)) {
+        console.log("resetting previous start tile");
+        virtualCanvas.resetTileColor(startingTilePosition.X, startingTilePosition.Y);
+        let previousStartTile = virtualCanvas.getTile(startingTilePosition.X, startingTilePosition.Y);
+        previousStartTile.removeIcon();
+        previousStartTile.type = "blank";
+        startingTilePosition.X = -1;
+        startingTilePosition.Y = -1;
+    } else {
+        console.log("attempted start tile reset: failed tho");
+    }
+}
+
+mouseEventFunctions.resetPreviousGoalTile = () => {
+    if (virtualCanvas.isTileCoordinatesOnGrid(goalTilePosition.X, goalTilePosition.Y)) {
+        virtualCanvas.resetTileColor(goalTilePosition.X, goalTilePosition.Y);
+        let previousStartTile = virtualCanvas.getTile(goalTilePosition.X, goalTilePosition.Y);
+        previousStartTile.removeIcon();
+        previousStartTile.type = "blank";
+        goalTilePosition.X = -1;
+        goalTilePosition.Y = -1;
+    }
+}
+
+mouseEventFunctions.canPlaceOnTile = (x, y) => {
+    return virtualCanvas.isTileCoordinatesOnGrid(x, y) && virtualCanvas.getTile(x, y).type === "blank";
+}
+
+mouseEventFunctions.hasPressedLMB = (e) => {
+    return e.button == LEFT_MOUSE_BUTTON;
+}
+
+mouseEventFunctions.hasPressedRMB = (e) => {
+    return e.button == RIGHT_MOUSE_BUTTON;
+}
+
+mouseEventFunctions.hasPressedMMB = (e) => {
+    return e.button == MIDDLE_MOUSE_BUTTON;
+}
+
+const LEFT_MOUSE_BUTTON = 0;
+const MIDDLE_MOUSE_BUTTON = 1;
+const RIGHT_MOUSE_BUTTON = 2;
+const WALL_COLOR = new Color3(80,80,255);
+console.log(WALL_COLOR._r, WALL_COLOR._g, WALL_COLOR._b);
+const WALL_ALPHA = 0.5;
+let isHoldingLMB = false;
+let isHoldingRMB = false;
+let previousTilePos = null;
+
+function connectMouseEvents() {
     let isTranslating = false;
     let originalMousePosition = new Vector2();
     let lastMousePosition = new Vector2();
+
     document.onmousedown = (e) => {
-        console.log(e);
-        if (e.button == 1 && !isTranslating) {
+        if (mouseEventFunctions.hasPressedLMB(e)) {
+            isHoldingLMB = true;
+        } else if (mouseEventFunctions.hasPressedRMB(e)) {
+            isHoldingRMB = true;
+        }
+        let mousePos = new Vector2(e.clientX, e.clientY);
+        let hoveringElement = document.elementFromPoint(mousePos.X, mousePos.Y);
+        if (mouseEventFunctions.hasPressedMMB(e) && !isTranslating) {
             isTranslating = true;
             document.body.style.cursor = "grabbing";
             originalMousePosition = new Vector2(e.clientX, e.clientY);
             lastMousePosition = new Vector2(e.clientX, e.clientY);
+        } else if (isUserState("placingStartingTile")) {
+            // let hoveringElement = document.elementFromPoint(e.clientX, e.clientY);
+            if (hoveringElement === canvas) {
+                let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(new Vector2(e.clientX, e.clientY));
+                let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
+                if (mouseEventFunctions.hasPressedLMB(e) 
+                && mouseEventFunctions.canPlaceOnTile(hoverTileCoordinate.X, hoverTileCoordinate.Y)) {
+                    mouseEventFunctions.resetPreviousStartTile();
+                    startingTilePosition = hoverTileCoordinate;
+                    virtualCanvas.setTileColor(startingTilePosition.X, startingTilePosition.Y, new Color3(100,255,100), 0.5);
+                    hoverTile.setIcon(startingTileIcon);
+                    hoverTile.type = "start";
+                } else if (mouseEventFunctions.hasPressedRMB(e) 
+                && hoverTileCoordinate.equals(startingTilePosition)) {
+                    mouseEventFunctions.resetPreviousStartTile();
+                    hoverTile.type = "blank";
+                }
+            }
+        } else if (isUserState("placingGoalTile")) {
+            // let hoveringElement = document.elementFromPoint(e.clientX, e.clientY);
+            if (hoveringElement === canvas) {
+                let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(new Vector2(e.clientX, e.clientY));
+                let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
+                if (mouseEventFunctions.hasPressedLMB(e) 
+                && mouseEventFunctions.canPlaceOnTile(hoverTileCoordinate.X, hoverTileCoordinate.Y)) {
+                    mouseEventFunctions.resetPreviousGoalTile();
+                    goalTilePosition = hoverTileCoordinate;
+                    virtualCanvas.setTileColor(goalTilePosition.X, goalTilePosition.Y, 
+                        new Color3(255,100,100), 0.5);
+                    hoverTile.setIcon(goalTileIcon);
+                    hoverTile.type = "goal";
+                } else if (mouseEventFunctions.hasPressedRMB(e) 
+                && hoverTileCoordinate.equals(goalTilePosition)) {
+                    mouseEventFunctions.resetPreviousGoalTile();
+                    hoverTile.type = "blank";
+                }
+            }
+        } else if (isUserState("placingWallTiles")) {
+            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+                let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
+                let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
+                if (mouseEventFunctions.hasPressedLMB(e)) {
+                    if (mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
+                        virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, WALL_COLOR, WALL_ALPHA);
+                        hoverTile.type = "wall";
+                    }
+                } else if (mouseEventFunctions.hasPressedRMB(e)) {
+                    if (hoverTile.type === "wall") {
+                        virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
+                        hoverTile.type = "blank";
+                    }
+                }
+                previousTilePos = hoverTilePos;
+            }
+        } else if (isUserState("placingWeightTiles")) {
+            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+                let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
+                let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
+                if (mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)
+                && mouseEventFunctions.hasPressedLMB(e)) {
+                    virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, WALL_COLOR, WALL_ALPHA);
+                    hoverTile.type = "weight";
+                    hoverTile.setIcon(weightTileIcon);    
+                } else if (mouseEventFunctions.hasPressedRMB(e) && hoverTile.type === "weight") {
+                    virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
+                    hoverTile.type = "blank";
+                    hoverTile.removeIcon();
+                }
+            }
         }
     }
 
     document.onmouseup = (e) => {
-        if (e.button == 1 && isTranslating) {
+        if (mouseEventFunctions.hasPressedLMB(e)) {
+            isHoldingLMB = false;
+        } else if (mouseEventFunctions.hasPressedRMB(e)) {
+            isHoldingRMB = false;
+        }
+        if (mouseEventFunctions.hasPressedMMB(e) && isTranslating) {
             isTranslating = false;
             document.body.style.cursor = "default";
         }
     }
 
     document.onmousemove = (e) => {
+        currentMousePosition.X = e.clientX;
+        currentMousePosition.Y = e.clientY;
+        let mousePos = new Vector2(e.clientX, e.clientY);
+        let hoveringElement = document.elementFromPoint(e.clientX, e.clientY);
         if (isTranslating) {
             let newMousePosition = new Vector2(e.clientX, e.clientY);
             let delta = newMousePosition.sub(lastMousePosition);
@@ -320,11 +657,113 @@ function connectCanvasTranslationEvent() {
             }
             lastMousePosition = newMousePosition;
         }
+        if (isUserState("placingWallTiles") && hoveringElement === canvas
+        && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+            let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
+            let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
+            if (!hoverTilePos.equals(previousTilePos)) {
+                if (isHoldingLMB && mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
+                    hoverTile.type = "wall";
+                    virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, 
+                        WALL_COLOR, WALL_ALPHA);
+                } else if (isHoldingRMB && hoverTile.type === "wall" && !(isHoldingLMB)) {
+                    hoverTile.type = "blank";
+                    virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
+                }
+                previosTilePos = hoverTilePos;
+            }
+        } else if (isUserState("placingWeightTiles") && hoveringElement === canvas 
+        && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+            let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
+            let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
+            if (isHoldingLMB && mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
+                virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, WALL_COLOR, WALL_ALPHA);
+                hoverTile.type = "weight";
+                hoverTile.setIcon(weightTileIcon);
+            } else if (isHoldingRMB && hoverTile.type === "weight") {
+                virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
+                hoverTile.type = "blank";
+                hoverTile.removeIcon();
+            }
+        }
+    }
+
+    document.onmouseenter = (event) => {
+        isMouseInViewport = true;
+        console.log("entered the screen");
+    }
+
+    document.onmouseleave = (event) => {
+        isMouseInViewport = false;
+        console.log("left the screen");
     }
 }
 
 
+
+const FLASH_TIME = 1200; // milliseconds
+const TARGET_ALPHA_VALUE = 0.2;
+const DELTA_ALPHA_PER_UPDATE = TARGET_ALPHA_VALUE / FLASH_TIME * FRAME_TIMING; // alpha value delta per frame
+// const TILE_HOVER_COLOR = new Color3(0,0,0);
+let currentAlphaValue = TARGET_ALPHA_VALUE;
+let alphaChangeDirection = 1;
+let isStateWithHoverAnim = () => {
+    return isUserState("idle") || isUserState("placingStartingTile") || isUserState("placingWeightTiles")
+    || isUserState("placingGoalTile") || isUserState("placingWallTiles");
+}
+function frameUpdate() {
+    ctx.clearRect(0, 0, width, height);
+    virtualCanvas.draw();
+    if (isMouseInViewport && isStateWithHoverAnim()) {
+        let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(currentMousePosition);
+        let topLeftCorner = virtualCanvas.getScreenCoordinateFromTileCoordinate(hoverTilePos);
+        if (isUserState("idle") || mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
+            currentAlphaValue += alphaChangeDirection * DELTA_ALPHA_PER_UPDATE;
+            if (currentAlphaValue >= TARGET_ALPHA_VALUE) {
+                currentAlphaValue = TARGET_ALPHA_VALUE;
+                alphaChangeDirection = -1;
+            } else if (currentAlphaValue <= 0) {
+                currentAlphaValue = 0;
+                alphaChangeDirection = 1;
+            }
+            let fillColor = new Color3(0,0,0);
+            let icon = null;
+            switch(getUserState()) {
+                case "idle":
+                    fillColor.setRGB(100,100,100);
+                    break;
+                case "placingWallTiles":
+                    fillColor.setRGB(WALL_COLOR.R, WALL_COLOR.G, WALL_COLOR.B);
+                    break;
+                case "placingWeightTiles":
+                    fillColor.setRGB(WALL_COLOR.R, WALL_COLOR.G, WALL_COLOR.B);
+                    icon = weightTileIcon;
+                    break;
+                case "placingStartingTile":
+                    fillColor.setRGB(100,255,100);
+                    icon = startingTileIcon;
+                    break;
+                case "placingGoalTile":
+                    fillColor.setRGB(255,100,100);
+                    icon = goalTileIcon;
+                    break;
+            }
+            ctx.fillStyle = `rgba(${fillColor.R},${fillColor.G},${fillColor.B},${currentAlphaValue})`;
+            ctx.fillRect(topLeftCorner.X + 2, topLeftCorner.Y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+            if (icon !== null) {
+                ctx.drawImage(icon, topLeftCorner.X + ICON_CORNER_OFFSET, topLeftCorner.Y + ICON_CORNER_OFFSET);
+            }
+        }
+    }
+    drawGridToCenterVector();
+    drawCenterReference();
+}
+
+
+
 function main() {
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
     // Local variables needed
     let settingValues = {algorithm : "dijsktra", playbackMode : "auto"};
     let speedSetting = {
@@ -357,6 +796,7 @@ function main() {
     let markerButton = document.getElementById("markerButton");
     let goalButton = document.getElementById("goalButton");
     let wallButton = document.getElementById("wallButton");
+    let weightButton = document.getElementById("weightButton");
     let clearButton = document.getElementById("clearButton");
     let settingsButton = document.getElementById("settingsButton");
     let infoButton = document.getElementById("infoButton");
@@ -367,7 +807,7 @@ function main() {
     let clearWindow = document.body.querySelector(".clear-prompt");
     let clearCloseButton = clearWindow.querySelector(".close-prompt");
 
-    let activeButtons = new Map();
+    let activeButtons = new Map(); // My sad attempt at controlling user states
     let totalActiveButtons = 0;
     activeButtons.set("settings", false);
     activeButtons.set("information", false);
@@ -467,6 +907,7 @@ function main() {
         }
         onPromptButtonClick(settingsCloseButton, "settings", settingsWindow, onOpen, onClose);
     };
+
     clearButton.onclick = () => {
         let clearWallsButton = document.getElementById("clearWallsButton");
         let clearEverythingButton = document.getElementById("clearEverythingButton");
@@ -488,6 +929,7 @@ function main() {
                 onClose();
                 clearCloseButton.onclick = () => {};
                 // execute the "clear walls" function here
+                virtualCanvas.resetWallTilesOnly();
             }
             clearEverythingButton.onclick = () => {
                 console.log("clear everything clicked");
@@ -497,10 +939,52 @@ function main() {
                 onClose();
                 clearCloseButton.onclick = () => {};
                 // execute the "clear everything" function here
+                virtualCanvas.resetAllTiles();
             }
         };
+
         onPromptButtonClick(clearCloseButton, "clearWalls", clearWindow, onOpen, onClose);
     };
+
+    markerButton.onclick = () => {
+        if (isUserState("idle")) {
+            changeUserState("placingStartingTile");
+            markerButton.classList.add("active-button");
+        } else if (isUserState("placingStartingTile")) {
+            changeUserState("idle");
+            markerButton.classList.remove("active-button");
+        }
+    }
+
+    goalButton.onclick = () => {
+        if (isUserState("idle")) {
+            changeUserState("placingGoalTile");
+            goalButton.classList.add("active-button");
+        } else if (isUserState("placingGoalTile")) {
+            changeUserState("idle");
+            goalButton.classList.remove("active-button");
+        }
+    }
+
+    wallButton.onclick = () => {
+        if (isUserState("idle")) {
+            changeUserState("placingWallTiles");
+            wallButton.classList.add("active-button");
+        } else if (isUserState("placingWallTiles")) {
+            changeUserState("idle");
+            wallButton.classList.remove("active-button");
+        }
+    }
+
+    weightButton.onclick = () => {
+        if (isUserState("idle")) {
+            changeUserState("placingWeightTiles");
+            weightButton.classList.add("active-button");
+        } else if (isUserState("placingWeightTiles")) {
+            changeUserState("idle");
+            weightButton.classList.remove("active-button");
+        }
+    }
 
     speedScaleButton.onclick = () => {
         let speedLabel = document.querySelector(".speed-scale-label");
@@ -508,9 +992,9 @@ function main() {
         speedSetting.current = speedSetting.current % speedSetting.speedValues.length;
         speedLabel.innerHTML = speedSetting.speedLabels[speedSetting.current];
     }
+
     // Other functionality that's important as fuck
-    connectCanvasTranslationEvent();
+    connectMouseEvents();
     setInterval(frameUpdate, FRAME_TIMING);
 }
-
 main();
