@@ -1,41 +1,20 @@
 // This is a program that draws graphics for a path-finding visualizer, made by Naseer Rehman.
 // Very hard to make, for me.
 
+import Color3 from "./modules/color3.js";
+import Vector2 from "./modules/vector2.js";
+import Screen from "./modules/screen.js";
+import Grid from "./modules/grid.js";
+
+
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext('2d');
+Screen.ctx = canvas.getContext('2d');
 let width = canvas.offsetWidth;
 let height = canvas.offsetHeight;
 canvas.width = width;
 canvas.height = height;
 
-// CONSTANTS VARIABLES
-const GRID_BORDER_COLOR = getComputedStyle(document.body).getPropertyValue("--grid-background");
-const GRID_LINE_COLOR = getComputedStyle(document.body).getPropertyValue("--grid-line-color");
-const TILE_SIZE = 48; // Dimensions of the square grid tile.
-const TILE_SIZE_WITH_BORDER = 50;
-const FPS = 60 // frames
-const FRAME_TIMING = 1000 / FPS;
-const DEFAULT_WEIGHT = 15; // Default weight for a weight tile.
-// const CANVAS_SIZE - The virtual canvas size
-// const MAX_OFFSET - The max center offset 
-
-
-// VARIABLES
-let centerOffset;
-let currentMousePosition;
-let isMouseInViewport;
-let startingTilePosition;
-let goalTilePosition;
-let currentUserState = "idle";
-    // states: idle, placingStartingTile, placingGoalTile, 
-    //         erasingTiles, editingSettings, viewingInfo, 
-    //         stepping, autoPlaying, placingWallTiles,
-    //         placingWeightTiles
-// const SCREEN_CENTER - The screen coordinate of its center
-
 // Images
-const ICON_SIZE = 30;
-const ICON_CORNER_OFFSET = Math.floor((TILE_SIZE - ICON_SIZE) / 2)
 let startingTileIcon = new Image();
 let goalTileIcon = new Image();
 let weightTileIcon = new Image();
@@ -44,399 +23,32 @@ startingTileIcon.src = "images/marker-PNG.png";
 goalTileIcon.src = "images/target-PNG.png";
 weightTileIcon.src = "images/weight-PNG.png";
 
-
-// CLASSES
-
-class Color3 {
-    constructor(r, g, b) {
-        this._r = r;
-        this._g = g;
-        this._b = b;
-    }
-    get R() { return this._r; }
-    get G() { return this._g; }
-    get B() { return this._b; }
-    set R(r) { this._r = r; }
-    set G(g) { this._g = g; }
-    set B(b) { this._b = b; } 
-    setRGB(r, g, b) {
-        this.R = r;
-        this.G = g;
-        this.B = b;
-    }
-}
-
-class Vector2 {
-    constructor(x = 0, y = 0) {
-        this.x = x;
-        this.y = y;
-        return this;
-    }
-
-    add(vector2) {
-        console.assert(vector2 instanceof Vector2);
-        return new Vector2(this.x + vector2.x, this.y + vector2.y);
-    }
-
-    sub(vector2) {
-        console.assert(vector2 instanceof Vector2);
-        return new Vector2(this.x - vector2.x, this.y - vector2.y);
-    }
-
-    scale(scalar) {
-        return new Vector2(this.x * scalar, this.y * scalar);
-    }
-
-    dist(vector2) {
-        console.assert(vector2 instanceof Vector2);
-        let delta = vector2.sub(this);
-        return Math.sqrt(delta.x * delta.x + delta.y * delta.y);
-    }
-
-    equals(vector2) {
-        if (!(vector2 instanceof Vector2)) {
-            return false;
-        }
-        return this.x == vector2.x && this.y == vector2.y;
-    }
-
-    get X() { return this.x; }
-    get Y() { return this.y; }
-    set X(x) { this.x = x; }
-    set Y(y) { this.y = y; }
-
-    getX() { return this.x; }
-    getY() { return this.y; }
-    setX(x) { this.x = x; }
-    setY(y) { this.y = y; }
-}
-
-const CANVAS_SIZE = new Vector2(width, height).scale(1.5);
-const MAX_OFFSET = new Vector2((CANVAS_SIZE.getX() - width) / 2, (CANVAS_SIZE.getY() - height) / 2);
-startingTilePosition = new Vector2(-1, -1);
-goalTilePosition = new Vector2(-1, -1);
-centerOffset = new Vector2(0, 0);
-currentMousePosition = new Vector2(-width, -height);
-const SCREEN_CENTER = new Vector2(Math.floor(width / 2), 
+// CONSTANTS VARIABLES
+const DEFAULT_WEIGHT = 15; // Default weight for a weight tile.
+Screen.width = width;
+Screen.height = height;
+Screen.TILE_SIZE = 48;
+Screen.TIME_SIZE_WITH_BORDER = Screen.TILE_SIZE + 2;
+Screen.ICON_SIZE = 30;
+Screen.ICON_CORNER_OFFSET = Math.floor((Screen.TILE_SIZE - Screen.ICON_SIZE) / 2);
+Screen.CANVAS_SIZE = new Vector2(width, height).scale(1.5);
+Screen.MAX_OFFSET = new Vector2((Screen.CANVAS_SIZE.getX() - width) / 2, (Screen.CANVAS_SIZE.getY() - height) / 2);
+Screen.startingTilePosition = new Vector2(-1, -1);
+Screen.goalTilePosition = new Vector2(-1, -1);
+Screen.centerOffset = new Vector2(0, 0);
+Screen.currentMousePosition = new Vector2(-width, -height);
+Screen.SCREEN_CENTER = new Vector2(Math.floor(width / 2), 
                                   Math.floor(height / 2));
+Screen.isMouseInViewport = false;
 
-class Tile {
-    calculateCSSColor() {
-        this._CSSColor = `rgba(${this.color.R},${this.color.G},${this.color.B},${this._alpha})`;
-        // console.log(this._CSSColor);
-    }
+// VARIABLES
+let currentUserState = "idle";
+    // states: idle, placingStartingTile, placingGoalTile, 
+    //         erasingTiles, editingSettings, viewingInfo, 
+    //         stepping, autoPlaying, placingWallTiles,
+    //         placingWeightTiles
 
-    constructor(r, g, b, a) {
-        this._color = new Color3(r, g, b);
-        this._alpha = a; // a = 1 is fully visible, a = 0 is invisible.
-        this.calculateCSSColor();
-        this._hasIcon = false;
-        this._icon = null;
-        this._type = "blank"; // Tile types: blank, wall, start, goal, weight
-    }
-
-    set color(c) { 
-        // console.log(c instanceof Color3);
-        this._color = c;
-        this.calculateCSSColor();
-    }
-
-    get color() {
-        return this._color;
-    }
-
-    set alpha(a) {
-        // console.log(`Setting alpha to: ${a}`);
-        this._alpha = a;
-        this.calculateCSSColor();
-    }
-
-    get alpha() {
-        return this._alpha;
-    }
-
-    get CSSColor() {
-        return this._CSSColor;
-    }
-
-    set type(t) {
-        this._type = t;
-    }
-
-    get type() {
-        return this._type;
-    }
-
-    hasIcon() {
-        return this._hasIcon;
-    }
-
-    setIcon(img) {
-        console.assert(img instanceof Image);
-        this._hasIcon = true;
-        this._icon = img;
-    }
-
-    getIcon() {
-        return this._icon;
-    }
-
-    removeIcon() {
-        this._hasIcon = false;
-        this._icon = null;
-    }
-}
-
-class Grid {
-    topLeftCorner = new Vector2();
-    topRightCorner = new Vector2();
-    bottomLeftCorner = new Vector2();
-    bottomRightCorner = new Vector2();
-
-    calcTopLeftCorner(offset) {
-        console.assert(offset instanceof Vector2);
-        this.topLeftCorner.X = SCREEN_CENTER.X + Math.floor(offset.X) - (this.tileGrid.size.X * (TILE_SIZE + 1)) / 2;
-        this.topLeftCorner.Y = SCREEN_CENTER.Y + Math.floor(offset.Y) - (this.tileGrid.size.Y * (TILE_SIZE + 1)) / 2;
-    }
-
-    calcCorners(offset) {
-        console.assert(offset instanceof Vector2);
-        this.calcTopLeftCorner(offset);
-        let relativeCenter = SCREEN_CENTER.add(offset);
-        relativeCenter.X = Math.floor(relativeCenter.X);
-        relativeCenter.Y = Math.floor(relativeCenter.Y);
-        this.topRightCorner.X = relativeCenter.X + (this.tileGrid.size.X * (TILE_SIZE + 1)) / 2;
-        this.topRightCorner.Y = relativeCenter.Y - (this.tileGrid.size.Y * (TILE_SIZE + 1)) / 2;
-        this.bottomRightCorner.X = relativeCenter.X + (this.tileGrid.size.X * (TILE_SIZE + 1)) / 2;
-        this.bottomRightCorner.Y = relativeCenter.Y + (this.tileGrid.size.Y * (TILE_SIZE + 1)) / 2;
-        this.bottomLeftCorner.X = relativeCenter.X - (this.tileGrid.size.X * (TILE_SIZE + 1)) / 2;
-        this.bottomLeftCorner.Y = relativeCenter.Y + (this.tileGrid.size.Y * (TILE_SIZE + 1)) / 2;
-    }
-
-    /**
-     * Given a tile coordinate (as a Vector2), the function will return screen coordinate
-     * of the top-left pixel of the specified tile, taking the center-offset into consideration.
-     * @param {Vector2} tileCoordinate 
-     * @returns {Vector2}
-     */
-    getScreenCoordinateFromTileCoordinate(tileCoordinate) {
-        console.assert(tileCoordinate instanceof Vector2);
-        this.calcTopLeftCorner(centerOffset);
-        let calculatedCoordinate = new Vector2();
-        calculatedCoordinate.X = this.topLeftCorner.X + 1 + tileCoordinate.X * (TILE_SIZE + 1);
-        calculatedCoordinate.Y = this.topLeftCorner.Y + 1 + tileCoordinate.Y * (TILE_SIZE + 1);
-        return calculatedCoordinate;
-    }
-
-    /**
-     * Given a screen coordainte, the function will return the tile that the screen coordinate resides on.
-     * @param {Vector2} screenCoordinate 
-     * @returns {Vector2}
-     */
-    getTileCoordinateFromScreenCoordinate(screenCoordinate) {
-        console.assert(screenCoordinate instanceof Vector2);
-        this.calcTopLeftCorner(centerOffset);
-        let tileCoordinate = new Vector2();
-        tileCoordinate.X = Math.floor((screenCoordinate.X - this.topLeftCorner.X) / (TILE_SIZE + 1));
-        tileCoordinate.Y = Math.floor((screenCoordinate.Y - this.topLeftCorner.Y) / (TILE_SIZE + 1));
-        return tileCoordinate;
-    }
-
-    constructor(canvasSizeX, canvasSizeY) {
-        this.canvas = {};
-        this.canvas.size = new Vector2(canvasSizeX, canvasSizeY);
-        // Now calculate the tiles that can fit in this canvas
-        let leftOverX = (this.canvas.size.getX() - 1) % (2 * TILE_SIZE + 2);
-        let leftOverY = (this.canvas.size.getY() - 1) % (2 * TILE_SIZE + 2);
-        this.tileGrid = {}
-        this.tileGrid.size = new Vector2();
-        this.tileGrid.size.setX((this.canvas.size.getX() - 1 - leftOverX) / (TILE_SIZE + 1));
-        this.tileGrid.size.setY((this.canvas.size.getY() - 1 - leftOverY) / (TILE_SIZE + 1));
-        console.log(`Tile Grid Size: (${this.tileGrid.size.X}, ${this.tileGrid.size.Y})`);
-
-        this.tileGrid.grid = [];
-        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
-            this.tileGrid.grid[r] = [];
-            for (let c = 0; c < this.tileGrid.size.X; ++c) {
-                this.tileGrid.grid[r][c] = new Tile(0,0,0,0);
-            }
-        }
-
-        this.wallGrid = [];
-        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
-            this.wallGrid[r] = [];
-            
-        }
-    }
-
-    /**
-     * Checks if the tile coordinates are valid coordinates on the tile grid.
-     * @param {Int} x 
-     * @param {Int} y 
-     * @returns {Boolean}
-     */
-    isTileCoordinatesOnGrid(x, y) {
-        return (0 <= x && x < this.tileGrid.size.X) && (0 <= y && y < this.tileGrid.size.y);
-    }
-
-    /**
-     * Checks if the screen coordinates is on the displayed tile grid.
-     * @param {Vector2} pos 
-     * @returns {Boolean}
-     */
-    isScreenCoordinatesOnGrid(pos) {
-        let hoverTilePos = this.getTileCoordinateFromScreenCoordinate(pos);
-        return this.isTileCoordinatesOnGrid(hoverTilePos.X, hoverTilePos.Y);
-    }
-
-    /**
-     * Obtains the tile at the position (x, y) on the tile grid.
-     * @param {Int} x 
-     * @param {Int} y 
-     * @returns {Tile}
-     */
-    getTile(x, y) {
-        console.assert(this.isTileCoordinatesOnGrid(x, y));
-        return this.tileGrid.grid[y][x];
-    }
-
-    /**
-     * Set the color of the tile at position (x, y)
-     * @param {Number} x 
-     * @param {Number} y 
-     * @param {Color3} color 
-     * @param {Number} alpha 
-     */
-    setTileColor(x, y, color, alpha) {
-        console.assert(this.isTileCoordinatesOnGrid(x, y));
-        console.assert(color instanceof Color3);
-        let tile = this.getTile(x, y);
-        tile.color = color;
-        tile.alpha = alpha;
-    }
-
-    resetTileColor(x, y) {
-        this.setTileColor(x, y, new Color3(0,0,0), 0);
-    }
-
-    resetAllTiles() {
-        goalTilePosition.X = startingTilePosition.X = -1;
-        goalTilePosition.Y = startingTilePosition.Y = -1;
-        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
-            for (let c = 0; c < this.tileGrid.size.X; ++c) {
-                let tile = this.tileGrid.grid[r][c];
-                tile.type = "blank";
-                if (tile.hasIcon) {
-                    tile.removeIcon();
-                }
-                this.resetTileColor(c, r);
-            }
-        }
-    }
-
-    resetWallTilesOnly() {
-        for (let r = 0; r < this.tileGrid.size.Y; ++r) {
-            for (let c = 0; c < this.tileGrid.size.X; ++c) {
-                let tile = this.tileGrid.grid[r][c];
-                if (tile.type === "wall" || tile.type === "weight") {
-                    tile.type = "blank";
-                    if (tile.hasIcon) {
-                        tile.removeIcon();
-                    }
-                    this.resetTileColor(c, r);
-                }
-            }
-        }
-    }
-
-    drawGridLines() {
-        let centerCrossSize = 20;
-        let centerLineX = SCREEN_CENTER.x + Math.floor(centerOffset.x) + 0.5;
-        let centerLineY = SCREEN_CENTER.y + Math.floor(centerOffset.y) + 0.5;
-    
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = GRID_LINE_COLOR;
-        ctx.beginPath();
-        ctx.moveTo(centerLineX, 0);
-        ctx.lineTo(centerLineX, height);
-        ctx.moveTo(0, centerLineY);
-        ctx.lineTo(width, centerLineY);
-        for (let x = centerLineX + TILE_SIZE + 1; x < width; x += (TILE_SIZE + 1)) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-        }
-        for (let x = centerLineX - TILE_SIZE - 1; x >= 0; x -= (TILE_SIZE + 1)) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-        }
-        for (let y = centerLineY + TILE_SIZE + 1; y < height; y += (TILE_SIZE + 1)) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-        }
-        for (let y = centerLineY - TILE_SIZE - 1; y >= 0; y -= (TILE_SIZE + 1)) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-        }
-        ctx.stroke();
-    
-        ctx.strokeStyle = "#F68F8F";
-        ctx.beginPath();
-        ctx.moveTo(centerLineX - TILE_SIZE, centerLineY);
-        ctx.lineTo(centerLineX + TILE_SIZE, centerLineY);
-        ctx.moveTo(centerLineX, centerLineY - TILE_SIZE);
-        ctx.lineTo(centerLineX, centerLineY + TILE_SIZE);
-        ctx.stroke();
-        ctx.closePath();
-    }
-
-    drawBorder() {
-        ctx.fillStyle = GRID_BORDER_COLOR;
-        this.calcCorners(centerOffset);
-        let leftSideDistance = this.topLeftCorner.X;
-        let rightSideDistance = this.bottomRightCorner.X + 1;
-        let topSideDistance = this.topLeftCorner.Y;
-        let bottomSideDistance = this.bottomRightCorner.Y + 1;
-        if (leftSideDistance > 0) {
-            ctx.fillRect(0, 0, leftSideDistance, height);
-        } else if (rightSideDistance < width) {
-            ctx.fillRect(rightSideDistance, 0, width - rightSideDistance, height);
-        }
-        if (topSideDistance > 0) {
-            ctx.fillRect(0, 0, width, topSideDistance);
-        } else if (bottomSideDistance < height) {
-            ctx.fillRect(0, bottomSideDistance, width, height - bottomSideDistance);
-        }
-    }
-
-    drawTiles() {
-        let topLeftTile = this.getTileCoordinateFromScreenCoordinate(new Vector2(0,0));
-        let bottomRightTile = this.getTileCoordinateFromScreenCoordinate(new Vector2(width, height));
-        let rowStart = Math.max(topLeftTile.Y, 0);
-        let rowEnd = Math.min(bottomRightTile.Y, this.tileGrid.size.Y - 1);
-        let columnStart = Math.max(topLeftTile.X, 0);
-        let columnEnd = Math.min(bottomRightTile.X, this.tileGrid.size.X - 1);
-        for (let r = rowStart; r <= rowEnd; ++r) {
-            for (let c = columnStart; c <= columnEnd; ++c) {
-                let currentTile = this.tileGrid.grid[r][c];
-                let tilePos = this.getScreenCoordinateFromTileCoordinate(new Vector2(c, r));
-                ctx.fillStyle = currentTile.CSSColor;
-                ctx.fillRect(tilePos.X + 2, tilePos.Y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-                if (currentTile.hasIcon()) {
-                    ctx.drawImage(currentTile.getIcon(), tilePos.X + ICON_CORNER_OFFSET, tilePos.Y + ICON_CORNER_OFFSET);
-                }
-            }
-        }
-    }
-
-    draw() {
-        this.drawGridLines();
-        this.drawTiles();
-        this.drawBorder();
-    }
-}
-
-// MORE CONSTANTS
-const virtualCanvas = new Grid(CANVAS_SIZE.X, CANVAS_SIZE.Y);
+const virtualCanvas = new Grid(Screen.CANVAS_SIZE.X, Screen.CANVAS_SIZE.Y);
 
 // FUNCTIONS
 function changeUserState(state) {
@@ -455,24 +67,24 @@ function isUserState(state) {
 
 
 function drawCenterReference() {
-    ctx.strokeStyle = "#A57400";
-    ctx.beginPath();
-    ctx.moveTo(SCREEN_CENTER.getX() - 10, SCREEN_CENTER.getY());
-    ctx.lineTo(SCREEN_CENTER.getX() + 10, SCREEN_CENTER.getY());
-    ctx.moveTo(SCREEN_CENTER.getX(), SCREEN_CENTER.getY() - 10);
-    ctx.lineTo(SCREEN_CENTER.getX(), SCREEN_CENTER.getY() + 10);
-    ctx.stroke();
-    ctx.closePath();
+    Screen.ctx.strokeStyle = "#A57400";
+    Screen.ctx.beginPath();
+    Screen.ctx.moveTo(Screen.SCREEN_CENTER.getX() - 10, Screen.SCREEN_CENTER.getY());
+    Screen.ctx.lineTo(Screen.SCREEN_CENTER.getX() + 10, Screen.SCREEN_CENTER.getY());
+    Screen.ctx.moveTo(Screen.SCREEN_CENTER.getX(), Screen.SCREEN_CENTER.getY() - 10);
+    Screen.ctx.lineTo(Screen.SCREEN_CENTER.getX(), Screen.SCREEN_CENTER.getY() + 10);
+    Screen.ctx.stroke();
+    Screen.ctx.closePath();
 }
 
 
 function drawGridToCenterVector() {
-    ctx.strokeStyle = "#00B029";
-    ctx.beginPath();
-    ctx.moveTo(SCREEN_CENTER.getX(), SCREEN_CENTER.getY());
-    ctx.lineTo(SCREEN_CENTER.getX() + centerOffset.getX(), SCREEN_CENTER.getY() + centerOffset.getY());
-    ctx.stroke();
-    ctx.closePath();
+    Screen.ctx.strokeStyle = "#00B029";
+    Screen.ctx.beginPath();
+    Screen.ctx.moveTo(Screen.SCREEN_CENTER.getX(), Screen.SCREEN_CENTER.getY());
+    Screen.ctx.lineTo(Screen.SCREEN_CENTER.getX() + Screen.centerOffset.getX(), Screen.SCREEN_CENTER.getY() + Screen.centerOffset.getY());
+    Screen.ctx.stroke();
+    Screen.ctx.closePath();
 }
 
 
@@ -485,27 +97,27 @@ function disconnectMouseEvents() {
 
 let mouseEventFunctions = {};
 mouseEventFunctions.resetPreviousStartTile = () => {
-    if (virtualCanvas.isTileCoordinatesOnGrid(startingTilePosition.X, startingTilePosition.Y)) {
+    if (virtualCanvas.isTileCoordinatesOnGrid(Screen.startingTilePosition.X, Screen.startingTilePosition.Y)) {
         console.log("resetting previous start tile");
-        virtualCanvas.resetTileColor(startingTilePosition.X, startingTilePosition.Y);
-        let previousStartTile = virtualCanvas.getTile(startingTilePosition.X, startingTilePosition.Y);
+        virtualCanvas.resetTileColor(Screen.startingTilePosition.X, Screen.startingTilePosition.Y);
+        let previousStartTile = virtualCanvas.getTile(Screen.startingTilePosition.X, Screen.startingTilePosition.Y);
         previousStartTile.removeIcon();
         previousStartTile.type = "blank";
-        startingTilePosition.X = -1;
-        startingTilePosition.Y = -1;
+        Screen.startingTilePosition.X = -1;
+        Screen.startingTilePosition.Y = -1;
     } else {
         console.log("attempted start tile reset: failed tho");
     }
 }
 
 mouseEventFunctions.resetPreviousGoalTile = () => {
-    if (virtualCanvas.isTileCoordinatesOnGrid(goalTilePosition.X, goalTilePosition.Y)) {
-        virtualCanvas.resetTileColor(goalTilePosition.X, goalTilePosition.Y);
-        let previousStartTile = virtualCanvas.getTile(goalTilePosition.X, goalTilePosition.Y);
+    if (virtualCanvas.isTileCoordinatesOnGrid(Screen.goalTilePosition.X, Screen.goalTilePosition.Y)) {
+        virtualCanvas.resetTileColor(Screen.goalTilePosition.X, Screen.goalTilePosition.Y);
+        let previousStartTile = virtualCanvas.getTile(Screen.goalTilePosition.X, Screen.goalTilePosition.Y);
         previousStartTile.removeIcon();
         previousStartTile.type = "blank";
-        goalTilePosition.X = -1;
-        goalTilePosition.Y = -1;
+        Screen.goalTilePosition.X = -1;
+        Screen.goalTilePosition.Y = -1;
     }
 }
 
@@ -529,7 +141,6 @@ const LEFT_MOUSE_BUTTON = 0;
 const MIDDLE_MOUSE_BUTTON = 1;
 const RIGHT_MOUSE_BUTTON = 2;
 const WALL_COLOR = new Color3(80,80,255);
-console.log(WALL_COLOR._r, WALL_COLOR._g, WALL_COLOR._b);
 const WALL_ALPHA = 0.5;
 let isHoldingLMB = false;
 let isHoldingRMB = false;
@@ -561,12 +172,12 @@ function connectMouseEvents() {
                 if (mouseEventFunctions.hasPressedLMB(e) 
                 && mouseEventFunctions.canPlaceOnTile(hoverTileCoordinate.X, hoverTileCoordinate.Y)) {
                     mouseEventFunctions.resetPreviousStartTile();
-                    startingTilePosition = hoverTileCoordinate;
-                    virtualCanvas.setTileColor(startingTilePosition.X, startingTilePosition.Y, new Color3(100,255,100), 0.5);
+                    Screen.startingTilePosition = hoverTileCoordinate;
+                    virtualCanvas.setTileColor(Screen.startingTilePosition.X, Screen.startingTilePosition.Y, new Color3(100,255,100), 0.5);
                     hoverTile.setIcon(startingTileIcon);
                     hoverTile.type = "start";
                 } else if (mouseEventFunctions.hasPressedRMB(e) 
-                && hoverTileCoordinate.equals(startingTilePosition)) {
+                && hoverTileCoordinate.equals(Screen.startingTilePosition)) {
                     mouseEventFunctions.resetPreviousStartTile();
                     hoverTile.type = "blank";
                 }
@@ -579,13 +190,13 @@ function connectMouseEvents() {
                 if (mouseEventFunctions.hasPressedLMB(e) 
                 && mouseEventFunctions.canPlaceOnTile(hoverTileCoordinate.X, hoverTileCoordinate.Y)) {
                     mouseEventFunctions.resetPreviousGoalTile();
-                    goalTilePosition = hoverTileCoordinate;
-                    virtualCanvas.setTileColor(goalTilePosition.X, goalTilePosition.Y, 
+                    Screen.goalTilePosition = hoverTileCoordinate;
+                    virtualCanvas.setTileColor(Screen.goalTilePosition.X, Screen.goalTilePosition.Y, 
                         new Color3(255,100,100), 0.5);
                     hoverTile.setIcon(goalTileIcon);
                     hoverTile.type = "goal";
                 } else if (mouseEventFunctions.hasPressedRMB(e) 
-                && hoverTileCoordinate.equals(goalTilePosition)) {
+                && hoverTileCoordinate.equals(Screen.goalTilePosition)) {
                     mouseEventFunctions.resetPreviousGoalTile();
                     hoverTile.type = "blank";
                 }
@@ -638,22 +249,22 @@ function connectMouseEvents() {
     }
 
     document.onmousemove = (e) => {
-        currentMousePosition.X = e.clientX;
-        currentMousePosition.Y = e.clientY;
+        Screen.currentMousePosition.X = e.clientX;
+        Screen.currentMousePosition.Y = e.clientY;
         let mousePos = new Vector2(e.clientX, e.clientY);
         let hoveringElement = document.elementFromPoint(e.clientX, e.clientY);
         if (isTranslating) {
             let newMousePosition = new Vector2(e.clientX, e.clientY);
             let delta = newMousePosition.sub(lastMousePosition);
-            if (Math.abs(centerOffset.X) <= MAX_OFFSET.X) {
-                let newX = centerOffset.X + delta.X;
-                newX = Math.sign(newX) * Math.min(Math.abs(newX), MAX_OFFSET.X);
-                centerOffset.X = newX;
+            if (Math.abs(Screen.centerOffset.X) <= Screen.MAX_OFFSET.X) {
+                let newX = Screen.centerOffset.X + delta.X;
+                newX = Math.sign(newX) * Math.min(Math.abs(newX), Screen.MAX_OFFSET.X);
+                Screen.centerOffset.X = newX;
             }
-            if (Math.abs(centerOffset.Y) <= MAX_OFFSET.Y) {
-                let newY = centerOffset.Y + delta.Y;
-                newY = Math.sign(newY) * Math.min(Math.abs(newY), MAX_OFFSET.Y);
-                centerOffset.Y = newY;
+            if (Math.abs(Screen.centerOffset.Y) <= Screen.MAX_OFFSET.Y) {
+                let newY = Screen.centerOffset.Y + delta.Y;
+                newY = Math.sign(newY) * Math.min(Math.abs(newY), Screen.MAX_OFFSET.Y);
+                Screen.centerOffset.Y = newY;
             }
             lastMousePosition = newMousePosition;
         }
@@ -670,7 +281,7 @@ function connectMouseEvents() {
                     hoverTile.type = "blank";
                     virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
                 }
-                previosTilePos = hoverTilePos;
+                previousTilePos = hoverTilePos;
             }
         } else if (isUserState("placingWeightTiles") && hoveringElement === canvas 
         && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
@@ -689,12 +300,12 @@ function connectMouseEvents() {
     }
 
     document.onmouseenter = (event) => {
-        isMouseInViewport = true;
+        Screen.isMouseInViewport = true;
         console.log("entered the screen");
     }
 
     document.onmouseleave = (event) => {
-        isMouseInViewport = false;
+        Screen.isMouseInViewport = false;
         console.log("left the screen");
     }
 }
@@ -703,7 +314,7 @@ function connectMouseEvents() {
 
 const FLASH_TIME = 1200; // milliseconds
 const TARGET_ALPHA_VALUE = 0.2;
-const DELTA_ALPHA_PER_UPDATE = TARGET_ALPHA_VALUE / FLASH_TIME * FRAME_TIMING; // alpha value delta per frame
+const DELTA_ALPHA_PER_UPDATE = TARGET_ALPHA_VALUE / FLASH_TIME * Screen.FRAME_TIMING; // alpha value delta per frame
 // const TILE_HOVER_COLOR = new Color3(0,0,0);
 let currentAlphaValue = TARGET_ALPHA_VALUE;
 let alphaChangeDirection = 1;
@@ -712,10 +323,10 @@ let isStateWithHoverAnim = () => {
     || isUserState("placingGoalTile") || isUserState("placingWallTiles");
 }
 function frameUpdate() {
-    ctx.clearRect(0, 0, width, height);
+    Screen.ctx.clearRect(0, 0, width, height);
     virtualCanvas.draw();
-    if (isMouseInViewport && isStateWithHoverAnim()) {
-        let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(currentMousePosition);
+    if (Screen.isMouseInViewport && isStateWithHoverAnim()) {
+        let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(Screen.currentMousePosition);
         let topLeftCorner = virtualCanvas.getScreenCoordinateFromTileCoordinate(hoverTilePos);
         if (isUserState("idle") || mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
             currentAlphaValue += alphaChangeDirection * DELTA_ALPHA_PER_UPDATE;
@@ -748,10 +359,10 @@ function frameUpdate() {
                     icon = goalTileIcon;
                     break;
             }
-            ctx.fillStyle = `rgba(${fillColor.R},${fillColor.G},${fillColor.B},${currentAlphaValue})`;
-            ctx.fillRect(topLeftCorner.X + 2, topLeftCorner.Y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+            Screen.ctx.fillStyle = `rgba(${fillColor.R},${fillColor.G},${fillColor.B},${currentAlphaValue})`;
+            Screen.ctx.fillRect(topLeftCorner.X + 2, topLeftCorner.Y + 2, Screen.TILE_SIZE - 4, Screen.TILE_SIZE - 4);
             if (icon !== null) {
-                ctx.drawImage(icon, topLeftCorner.X + ICON_CORNER_OFFSET, topLeftCorner.Y + ICON_CORNER_OFFSET);
+                Screen.ctx.drawImage(icon, topLeftCorner.X + Screen.ICON_CORNER_OFFSET, topLeftCorner.Y + Screen.ICON_CORNER_OFFSET);
             }
         }
     }
@@ -995,6 +606,6 @@ function main() {
 
     // Other functionality that's important as fuck
     connectMouseEvents();
-    setInterval(frameUpdate, FRAME_TIMING);
+    setInterval(frameUpdate, Screen.FRAME_TIMING);
 }
 main();
