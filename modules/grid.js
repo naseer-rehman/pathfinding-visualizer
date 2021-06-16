@@ -49,7 +49,7 @@ export default class Grid {
     }
 
     /**
-     * Given a screen coordainte, the function will return the tile that the screen coordinate resides on.
+     * Given a screen coordinate, the function will return the tile that the screen coordinate resides on.
      * @param {Vector2} screenCoordinate 
      * @returns {Vector2}
      */
@@ -228,7 +228,7 @@ export default class Grid {
             Screen.ctx.fillRect(0, bottomSideDistance, Screen.width, Screen.height - bottomSideDistance);
         }
     }
-
+    
     drawTiles() {
         let topLeftTile = this.getTileCoordinateFromScreenCoordinate(new Vector2(0,0));
         let bottomRightTile = this.getTileCoordinateFromScreenCoordinate(new Vector2(Screen.width, Screen.height));

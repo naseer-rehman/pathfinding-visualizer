@@ -5,7 +5,7 @@ import Color3 from "./modules/color3.js";
 import Vector2 from "./modules/vector2.js";
 import Screen from "./modules/screen.js";
 import Grid from "./modules/grid.js";
-
+import UserState from "./modules/user-state.js";
 
 const canvas = document.getElementById("canvas");
 Screen.ctx = canvas.getContext('2d');
@@ -40,6 +40,9 @@ Screen.currentMousePosition = new Vector2(-width, -height);
 Screen.SCREEN_CENTER = new Vector2(Math.floor(width / 2), 
                                   Math.floor(height / 2));
 Screen.isMouseInViewport = false;
+const virtualCanvas = new Grid(Screen.CANVAS_SIZE.X, Screen.CANVAS_SIZE.Y);
+Screen.virtualCanvas = virtualCanvas;
+const userState = new UserState();
 
 // VARIABLES
 let currentUserState = "idle";
@@ -48,7 +51,6 @@ let currentUserState = "idle";
     //         stepping, autoPlaying, placingWallTiles,
     //         placingWeightTiles
 
-const virtualCanvas = new Grid(Screen.CANVAS_SIZE.X, Screen.CANVAS_SIZE.Y);
 
 // FUNCTIONS
 function changeUserState(state) {
@@ -63,28 +65,6 @@ function getUserState() {
 
 function isUserState(state) {
     return getUserState() === state;
-}
-
-
-function drawCenterReference() {
-    Screen.ctx.strokeStyle = "#A57400";
-    Screen.ctx.beginPath();
-    Screen.ctx.moveTo(Screen.SCREEN_CENTER.getX() - 10, Screen.SCREEN_CENTER.getY());
-    Screen.ctx.lineTo(Screen.SCREEN_CENTER.getX() + 10, Screen.SCREEN_CENTER.getY());
-    Screen.ctx.moveTo(Screen.SCREEN_CENTER.getX(), Screen.SCREEN_CENTER.getY() - 10);
-    Screen.ctx.lineTo(Screen.SCREEN_CENTER.getX(), Screen.SCREEN_CENTER.getY() + 10);
-    Screen.ctx.stroke();
-    Screen.ctx.closePath();
-}
-
-
-function drawGridToCenterVector() {
-    Screen.ctx.strokeStyle = "#00B029";
-    Screen.ctx.beginPath();
-    Screen.ctx.moveTo(Screen.SCREEN_CENTER.getX(), Screen.SCREEN_CENTER.getY());
-    Screen.ctx.lineTo(Screen.SCREEN_CENTER.getX() + Screen.centerOffset.getX(), Screen.SCREEN_CENTER.getY() + Screen.centerOffset.getY());
-    Screen.ctx.stroke();
-    Screen.ctx.closePath();
 }
 
 
@@ -322,6 +302,7 @@ let isStateWithHoverAnim = () => {
     return isUserState("idle") || isUserState("placingStartingTile") || isUserState("placingWeightTiles")
     || isUserState("placingGoalTile") || isUserState("placingWallTiles");
 }
+
 function frameUpdate() {
     Screen.ctx.clearRect(0, 0, width, height);
     virtualCanvas.draw();
@@ -366,8 +347,8 @@ function frameUpdate() {
             }
         }
     }
-    drawGridToCenterVector();
-    drawCenterReference();
+    Screen.drawGridToCenterVector();
+    Screen.drawCenterReference();
 }
 
 
@@ -375,12 +356,12 @@ function frameUpdate() {
 function main() {
     document.addEventListener('contextmenu', event => event.preventDefault());
 
-    // Local variables needed
+    // Local variables
     let settingValues = {algorithm : "dijsktra", playbackMode : "auto"};
     let speedSetting = {
         current : 1, // index of option
         speedLabels : ["0.5x", "1.0x", "1.5x", "2.0x"],
-        speedValues : [0.5, 1, 1.5, 2.0]
+        speedValues : [0.5, 1.0, 1.5, 2.0]
     }
 
     // Toolbar Opener Functionality
@@ -458,103 +439,39 @@ function main() {
         }
     }
 
-    settingsButton.onclick = () => {
-        let isDropdownOpen = false;
-        let currentOpenDropdown = null;
-        let onOpen = () => {
-            let dropdowns = settingsWindow.querySelectorAll(".dropdown");
-            for (let i = 0; i < dropdowns.length; ++i) {
-                let dropdown = dropdowns[i];
-                let dropdownSettingValue = dropdown.dataset.setting;
-                let dropdownButton = dropdown.querySelector("div.active-dropdown-background");
-                let dropdownLabel = dropdown.querySelector("div.active-dropdown-value");
-                let dropdownOptionsContainer = dropdowns[i].querySelector("div.dropdown-options-container");
-                let dropdownOptions = dropdownOptionsContainer.querySelectorAll(".dropdown-option");
-                dropdownButton.onclick = () => {
-                    if (isDropdownOpen == false && currentOpenDropdown === null) {
-                        isDropdownOpen = true;
-                        currentOpenDropdown = dropdownSettingValue;
-                        let optionClicked = false;
-                        dropdownOptionsContainer.classList.remove("hidden");
-                        for (let i = 0; i < dropdownOptions.length; ++i) {
-                            let option = dropdownOptions[i];
-                            option.onclick = () => {
-                                if (optionClicked == false) {
-                                    let currentOptionValue = option.dataset.value;
-                                    optionClicked = true;
-                                    option.onclick = () => {};
-                                    dropdownOptionsContainer.classList.add("hidden");
-                                    dropdownLabel.innerHTML = currentOptionValue;
-                                    settingValues[dropdownSettingValue] = currentOptionValue;
-                                    currentOpenDropdown = null;
-                                    isDropdownOpen = false;
-                                    optionClicked = false;
-                                }
-                            };
-                        }
-                    } else if (isDropdownOpen == true && dropdownSettingValue === currentOpenDropdown) {
-                        for (let i = 0; i < dropdownOptions.length; ++i) {
-                            dropdownOptions[i].onclick = () => {};
-                        }
-                        dropdownOptionsContainer.classList.add("hidden");
-                        isDropdownOpen = false;
-                        currentOpenDropdown = null;
-                    }
-                };
-            }
-        };
-        let onClose = () => {
-            if (isDropdownOpen && currentOpenDropdown !== null) {
-                let dropdown = settingsWindow.querySelector(`.dropdown[data-setting=${currentOpenDropdown}]`);
-                let dropdownOptionsContainer = dropdown.querySelector("div.dropdown-options-container");
-                let dropdownOptions = dropdownOptionsContainer.querySelectorAll("div.dropdown-option");
-                for (let i = 0; i < dropdownOptions.length; ++i) {
-                    dropdownOptions[i].onclick = () => {};
-                }
-                dropdownOptionsContainer.classList.add("hidden");
-                isDropdownOpen = false;
-                currentOpenDropdown = null;
-            }
+    Screen.buttons.settingsButton.onclick = () => {
+        if (userState.currentState === UserState.editingSettingsState) {
+            // Currently viewing settings.
+            userState.handleButtonInput(settingsButton, "click", UserState.idleState);
+            settingsCloseButton.onclick = null;
+        } else {
+            // In another state.
+            userState.handleButtonInput(settingsButton, "click", UserState.editingSettingsState);
+            settingsCloseButton.onclick = () => {
+                userState.handleButtonInput(settingsCloseButton, "click", UserState.idleState);
+                settingsCloseButton.onclick = null;
+            };
         }
-        onPromptButtonClick(settingsCloseButton, "settings", settingsWindow, onOpen, onClose);
     };
 
-    clearButton.onclick = () => {
-        let clearWallsButton = document.getElementById("clearWallsButton");
-        let clearEverythingButton = document.getElementById("clearEverythingButton");
-        let disconnectButtonClickEvents = () => {
-            clearWallsButton.onclick = () => {};
-            clearEverythingButton.onclick = () => {};
+    Screen.buttons.clearButton.onclick = () => {
+        if (userState.currentState === UserState.clearState) {
+            userState.handleButtonInput(Screen.buttons.clearButton, "click", UserState.idleState);
+            Screen.buttons.clearCloseButton.onclick = null;
+            Screen.buttons.clearEverythingButton.onclick = null;
+            Screen.buttons.clearWallsButton.onclick = null;
+        } else {
+            userState.handleButtonInput(Screen.buttons.clearButton, "click", UserState.clearState);
+            Screen.buttons.clearCloseButton.onclick = () => {
+                userState.handleButtonInput(Screen.buttons.clearCloseButton, "click", UserState.idleState);
+            };
+            Screen.buttons.clearEverythingButton.onclick = () => {
+                userState.handleButtonInput(Screen.buttons.clearEverythingButton, "click", UserState.idleState);
+            };
+            Screen.buttons.clearWallsButton.onclick = () => {
+                userState.handleButtonInput(Screen.buttons.clearWallsButton, "click", UserState.idleState);
+            };
         }
-        let onClose = () => {
-            disconnectButtonClickEvents();
-        };
-        let onOpen = () => {
-            console.log("connecting button events");
-            clearWallsButton.onclick = () => {
-                // I have to manually close the entire window when this button is clicked.
-                console.log("clear walls only clicked");
-                clearWindow.classList.add("hidden");
-                activeButtons.set("clearWalls", false);
-                totalActiveButtons--;
-                onClose();
-                clearCloseButton.onclick = () => {};
-                // execute the "clear walls" function here
-                virtualCanvas.resetWallTilesOnly();
-            }
-            clearEverythingButton.onclick = () => {
-                console.log("clear everything clicked");
-                clearWindow.classList.add("hidden");
-                activeButtons.set("clearWalls", false);
-                totalActiveButtons--;
-                onClose();
-                clearCloseButton.onclick = () => {};
-                // execute the "clear everything" function here
-                virtualCanvas.resetAllTiles();
-            }
-        };
-
-        onPromptButtonClick(clearCloseButton, "clearWalls", clearWindow, onOpen, onClose);
     };
 
     markerButton.onclick = () => {
