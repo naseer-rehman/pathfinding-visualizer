@@ -33,6 +33,15 @@ export default class Settings {
         return this.playbackSpeed;
     }
 
+    static getPlaybackSpeedLabel() {
+        let speed = this.getPlaybackSpeed().toString();
+        if (speed.length > 1) {
+            return speed + "x";
+        } else {
+            return `${speed.charAt(0)}.0x`;
+        }
+    }
+
     static set(setting, value) {
         if (setting === "algorithm") {
             Settings.setAlgorithm(value);

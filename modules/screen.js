@@ -20,8 +20,8 @@ let clearWallsButton = document.getElementById("clearWallsButton");
 let clearEverythingButton = document.getElementById("clearEverythingButton");
 
 export default class Screen {
-    static ctx;
-    static virtualCanvas;
+    static ctx; // 2D Context
+    static virtualCanvas; // Grid object
     static SCREEN_CENTER;
     static TILE_SIZE;
     static TILE_SIZE_WITH_BORDER;
@@ -36,6 +36,10 @@ export default class Screen {
     static goalTilePosition;
     static startingTilePosition;
     static isMouseInViewport;
+    static isHoldingRMB;
+    static isHoldingMMB;
+    static isHoldingLMB;
+    static canvas;
     static buttons = {playButton, speedScaleButton, skipBackwardButton, skipForwardButton, markerButton, goalButton, wallButton, weightButton, clearButton, settingsButton, infoButton, settingsCloseButton, clearCloseButton, clearWallsButton, clearEverythingButton};
     static toolbarButtons = {playButton, speedScaleButton, skipBackwardButton, skipForwardButton, markerButton, goalButton, wallButton, weightButton, clearButton, settingsButton, infoButton};
     static windows = {clearWindow, settingsWindow};

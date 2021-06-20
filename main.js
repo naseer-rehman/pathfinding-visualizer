@@ -6,8 +6,10 @@ import Vector2 from "./modules/vector2.js";
 import Screen from "./modules/screen.js";
 import Grid from "./modules/grid.js";
 import UserState from "./modules/user-state.js";
+import Settings from "./modules/settings.js";
 
 const canvas = document.getElementById("canvas");
+Screen.canvas = canvas;
 Screen.ctx = canvas.getContext('2d');
 let width = canvas.offsetWidth;
 let height = canvas.offsetHeight;
@@ -65,13 +67,6 @@ function getUserState() {
 
 function isUserState(state) {
     return getUserState() === state;
-}
-
-
-function disconnectMouseEvents() {
-    document.onmousedown = null;
-    document.onmouseup = null;
-    document.onmousemove = null;
 }
 
 
@@ -134,9 +129,12 @@ function connectMouseEvents() {
     document.onmousedown = (e) => {
         if (mouseEventFunctions.hasPressedLMB(e)) {
             isHoldingLMB = true;
+            Screen.isHoldingLMB = true;
         } else if (mouseEventFunctions.hasPressedRMB(e)) {
             isHoldingRMB = true;
+            Screen.isHoldingRMB = true;
         }
+        userState.handleMouseInput(e, "mousedown");
         let mousePos = new Vector2(e.clientX, e.clientY);
         let hoveringElement = document.elementFromPoint(mousePos.X, mousePos.Y);
         if (mouseEventFunctions.hasPressedMMB(e) && !isTranslating) {
@@ -144,88 +142,22 @@ function connectMouseEvents() {
             document.body.style.cursor = "grabbing";
             originalMousePosition = new Vector2(e.clientX, e.clientY);
             lastMousePosition = new Vector2(e.clientX, e.clientY);
-        } else if (isUserState("placingStartingTile")) {
-            // let hoveringElement = document.elementFromPoint(e.clientX, e.clientY);
-            if (hoveringElement === canvas) {
-                let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(new Vector2(e.clientX, e.clientY));
-                let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
-                if (mouseEventFunctions.hasPressedLMB(e) 
-                && mouseEventFunctions.canPlaceOnTile(hoverTileCoordinate.X, hoverTileCoordinate.Y)) {
-                    mouseEventFunctions.resetPreviousStartTile();
-                    Screen.startingTilePosition = hoverTileCoordinate;
-                    virtualCanvas.setTileColor(Screen.startingTilePosition.X, Screen.startingTilePosition.Y, new Color3(100,255,100), 0.5);
-                    hoverTile.setIcon(startingTileIcon);
-                    hoverTile.type = "start";
-                } else if (mouseEventFunctions.hasPressedRMB(e) 
-                && hoverTileCoordinate.equals(Screen.startingTilePosition)) {
-                    mouseEventFunctions.resetPreviousStartTile();
-                    hoverTile.type = "blank";
-                }
-            }
-        } else if (isUserState("placingGoalTile")) {
-            // let hoveringElement = document.elementFromPoint(e.clientX, e.clientY);
-            if (hoveringElement === canvas) {
-                let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(new Vector2(e.clientX, e.clientY));
-                let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
-                if (mouseEventFunctions.hasPressedLMB(e) 
-                && mouseEventFunctions.canPlaceOnTile(hoverTileCoordinate.X, hoverTileCoordinate.Y)) {
-                    mouseEventFunctions.resetPreviousGoalTile();
-                    Screen.goalTilePosition = hoverTileCoordinate;
-                    virtualCanvas.setTileColor(Screen.goalTilePosition.X, Screen.goalTilePosition.Y, 
-                        new Color3(255,100,100), 0.5);
-                    hoverTile.setIcon(goalTileIcon);
-                    hoverTile.type = "goal";
-                } else if (mouseEventFunctions.hasPressedRMB(e) 
-                && hoverTileCoordinate.equals(Screen.goalTilePosition)) {
-                    mouseEventFunctions.resetPreviousGoalTile();
-                    hoverTile.type = "blank";
-                }
-            }
-        } else if (isUserState("placingWallTiles")) {
-            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
-                let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
-                let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
-                if (mouseEventFunctions.hasPressedLMB(e)) {
-                    if (mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
-                        virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, WALL_COLOR, WALL_ALPHA);
-                        hoverTile.type = "wall";
-                    }
-                } else if (mouseEventFunctions.hasPressedRMB(e)) {
-                    if (hoverTile.type === "wall") {
-                        virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
-                        hoverTile.type = "blank";
-                    }
-                }
-                previousTilePos = hoverTilePos;
-            }
-        } else if (isUserState("placingWeightTiles")) {
-            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
-                let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
-                let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
-                if (mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)
-                && mouseEventFunctions.hasPressedLMB(e)) {
-                    virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, WALL_COLOR, WALL_ALPHA);
-                    hoverTile.type = "weight";
-                    hoverTile.setIcon(weightTileIcon);    
-                } else if (mouseEventFunctions.hasPressedRMB(e) && hoverTile.type === "weight") {
-                    virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
-                    hoverTile.type = "blank";
-                    hoverTile.removeIcon();
-                }
-            }
         }
     }
 
     document.onmouseup = (e) => {
         if (mouseEventFunctions.hasPressedLMB(e)) {
             isHoldingLMB = false;
+            Screen.isHoldingLMB = false;
         } else if (mouseEventFunctions.hasPressedRMB(e)) {
             isHoldingRMB = false;
+            Screen.isHoldingRMB = false;
         }
         if (mouseEventFunctions.hasPressedMMB(e) && isTranslating) {
             isTranslating = false;
             document.body.style.cursor = "default";
         }
+        userState.handleMouseInput(e, "mouseup");
     }
 
     document.onmousemove = (e) => {
@@ -248,45 +180,15 @@ function connectMouseEvents() {
             }
             lastMousePosition = newMousePosition;
         }
-        if (isUserState("placingWallTiles") && hoveringElement === canvas
-        && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
-            let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
-            let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
-            if (!hoverTilePos.equals(previousTilePos)) {
-                if (isHoldingLMB && mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
-                    hoverTile.type = "wall";
-                    virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, 
-                        WALL_COLOR, WALL_ALPHA);
-                } else if (isHoldingRMB && hoverTile.type === "wall" && !(isHoldingLMB)) {
-                    hoverTile.type = "blank";
-                    virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
-                }
-                previousTilePos = hoverTilePos;
-            }
-        } else if (isUserState("placingWeightTiles") && hoveringElement === canvas 
-        && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
-            let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
-            let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
-            if (isHoldingLMB && mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
-                virtualCanvas.setTileColor(hoverTilePos.X, hoverTilePos.Y, WALL_COLOR, WALL_ALPHA);
-                hoverTile.type = "weight";
-                hoverTile.setIcon(weightTileIcon);
-            } else if (isHoldingRMB && hoverTile.type === "weight") {
-                virtualCanvas.resetTileColor(hoverTilePos.X, hoverTilePos.Y);
-                hoverTile.type = "blank";
-                hoverTile.removeIcon();
-            }
-        }
+        userState.handleMouseInput(e, "mousemove");
     }
 
     document.onmouseenter = (event) => {
         Screen.isMouseInViewport = true;
-        console.log("entered the screen");
     }
 
     document.onmouseleave = (event) => {
         Screen.isMouseInViewport = false;
-        console.log("left the screen");
     }
 }
 
@@ -306,63 +208,14 @@ let isStateWithHoverAnim = () => {
 function frameUpdate() {
     Screen.ctx.clearRect(0, 0, width, height);
     virtualCanvas.draw();
-    if (Screen.isMouseInViewport && isStateWithHoverAnim()) {
-        let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(Screen.currentMousePosition);
-        let topLeftCorner = virtualCanvas.getScreenCoordinateFromTileCoordinate(hoverTilePos);
-        if (isUserState("idle") || mouseEventFunctions.canPlaceOnTile(hoverTilePos.X, hoverTilePos.Y)) {
-            currentAlphaValue += alphaChangeDirection * DELTA_ALPHA_PER_UPDATE;
-            if (currentAlphaValue >= TARGET_ALPHA_VALUE) {
-                currentAlphaValue = TARGET_ALPHA_VALUE;
-                alphaChangeDirection = -1;
-            } else if (currentAlphaValue <= 0) {
-                currentAlphaValue = 0;
-                alphaChangeDirection = 1;
-            }
-            let fillColor = new Color3(0,0,0);
-            let icon = null;
-            switch(getUserState()) {
-                case "idle":
-                    fillColor.setRGB(100,100,100);
-                    break;
-                case "placingWallTiles":
-                    fillColor.setRGB(WALL_COLOR.R, WALL_COLOR.G, WALL_COLOR.B);
-                    break;
-                case "placingWeightTiles":
-                    fillColor.setRGB(WALL_COLOR.R, WALL_COLOR.G, WALL_COLOR.B);
-                    icon = weightTileIcon;
-                    break;
-                case "placingStartingTile":
-                    fillColor.setRGB(100,255,100);
-                    icon = startingTileIcon;
-                    break;
-                case "placingGoalTile":
-                    fillColor.setRGB(255,100,100);
-                    icon = goalTileIcon;
-                    break;
-            }
-            Screen.ctx.fillStyle = `rgba(${fillColor.R},${fillColor.G},${fillColor.B},${currentAlphaValue})`;
-            Screen.ctx.fillRect(topLeftCorner.X + 2, topLeftCorner.Y + 2, Screen.TILE_SIZE - 4, Screen.TILE_SIZE - 4);
-            if (icon !== null) {
-                Screen.ctx.drawImage(icon, topLeftCorner.X + Screen.ICON_CORNER_OFFSET, topLeftCorner.Y + Screen.ICON_CORNER_OFFSET);
-            }
-        }
-    }
+    userState.frameUpdate();
     Screen.drawGridToCenterVector();
     Screen.drawCenterReference();
 }
 
 
-
 function main() {
     document.addEventListener('contextmenu', event => event.preventDefault());
-
-    // Local variables
-    let settingValues = {algorithm : "dijsktra", playbackMode : "auto"};
-    let speedSetting = {
-        current : 1, // index of option
-        speedLabels : ["0.5x", "1.0x", "1.5x", "2.0x"],
-        speedValues : [0.5, 1.0, 1.5, 2.0]
-    }
 
     // Toolbar Opener Functionality
     let toolbarOpener = document.getElementById("toolbarOpener");
@@ -399,46 +252,6 @@ function main() {
     let clearWindow = document.body.querySelector(".clear-prompt");
     let clearCloseButton = clearWindow.querySelector(".close-prompt");
 
-    let activeButtons = new Map(); // My sad attempt at controlling user states
-    let totalActiveButtons = 0;
-    activeButtons.set("settings", false);
-    activeButtons.set("information", false);
-    activeButtons.set("placeWalls", false);
-    activeButtons.set("clearWalls", false);
-    activeButtons.set("placeGoal", false);
-    activeButtons.set("play", false);
-
-    // onPromptButtonClick(closeButtonObject, activeButtonsKey, windowToOpen) will handle 
-    //  the event associated with specified window's button, when it is clicked.
-    let onPromptButtonClick = (buttonCloseObject, buttonKey, windowObject, onOpen, onClose) => {
-        console.log(totalActiveButtons);
-        if (activeButtons.get(buttonKey)) {
-            totalActiveButtons--;
-            activeButtons.set(buttonKey, false);
-            windowObject.classList.add("hidden");
-            if (onClose) {
-                onClose();
-            }
-            buttonCloseObject.onclick = () => {};
-        } else if (totalActiveButtons == 0) {
-            totalActiveButtons++;
-            activeButtons.set(buttonKey, true);
-            windowObject.classList.remove("hidden");
-            if (onOpen) {
-                onOpen();
-            }
-            buttonCloseObject.onclick = () => {
-                windowObject.classList.add("hidden");
-                activeButtons.set(buttonKey, false);
-                totalActiveButtons--;
-                if (onClose) {
-                    onClose();
-                }
-                buttonCloseObject.onclick = () => {};
-            }
-        }
-    }
-
     Screen.buttons.settingsButton.onclick = () => {
         if (userState.currentState === UserState.editingSettingsState) {
             // Currently viewing settings.
@@ -474,51 +287,46 @@ function main() {
         }
     };
 
-    markerButton.onclick = () => {
-        if (isUserState("idle")) {
-            changeUserState("placingStartingTile");
-            markerButton.classList.add("active-button");
-        } else if (isUserState("placingStartingTile")) {
-            changeUserState("idle");
-            markerButton.classList.remove("active-button");
+    Screen.buttons.markerButton.onclick = () => {
+        if (userState.currentState === UserState.placingStartingTileState) {
+            userState.handleButtonInput(Screen.buttons.markerButton, "click", UserState.idleState);
+        } else {
+            userState.handleButtonInput(Screen.buttons.markerButton, "click", UserState.placingStartingTileState);
         }
     }
 
-    goalButton.onclick = () => {
-        if (isUserState("idle")) {
-            changeUserState("placingGoalTile");
-            goalButton.classList.add("active-button");
-        } else if (isUserState("placingGoalTile")) {
-            changeUserState("idle");
-            goalButton.classList.remove("active-button");
+    Screen.buttons.goalButton.onclick = () => {
+        if (userState.currentState === UserState.placingGoalTileState) {
+            userState.handleButtonInput(Screen.buttons.goalButton, "click", UserState.idleState);
+        } else {
+            userState.handleButtonInput(Screen.buttons.goalButton, "click", UserState.placingGoalTileState);
         }
     }
 
-    wallButton.onclick = () => {
-        if (isUserState("idle")) {
-            changeUserState("placingWallTiles");
-            wallButton.classList.add("active-button");
-        } else if (isUserState("placingWallTiles")) {
-            changeUserState("idle");
-            wallButton.classList.remove("active-button");
+    Screen.buttons.wallButton.onclick = () => {
+        if (userState.currentState === UserState.placingWallsState) {
+            userState.handleButtonInput(Screen.buttons.wallButton, "click", UserState.idleState);
+        } else {
+            userState.handleButtonInput(Screen.buttons.wallButton, "click", UserState.placingWallsState);
         }
     }
 
-    weightButton.onclick = () => {
-        if (isUserState("idle")) {
-            changeUserState("placingWeightTiles");
-            weightButton.classList.add("active-button");
-        } else if (isUserState("placingWeightTiles")) {
-            changeUserState("idle");
-            weightButton.classList.remove("active-button");
+    Screen.buttons.weightButton.onclick = () => {
+        if (userState.currentState === UserState.placingWeightTilesState) {
+            userState.handleButtonInput(Screen.buttons.weightButton, "click", UserState.idleState);
+        } else {
+            userState.handleButtonInput(Screen.buttons.weightButton, "click", UserState.placingWeightTilesState)
         }
     }
 
-    speedScaleButton.onclick = () => {
+    Screen.buttons.speedScaleButton.onclick = () => {
+        Settings.cyclePlaybackSpeed();
         let speedLabel = document.querySelector(".speed-scale-label");
-        speedSetting.current++;
-        speedSetting.current = speedSetting.current % speedSetting.speedValues.length;
-        speedLabel.innerHTML = speedSetting.speedLabels[speedSetting.current];
+        speedLabel.innerHTML = Settings.getPlaybackSpeedLabel();
+    }
+
+    Screen.buttons.playButton.onclick = () => {
+        // Here is the logic for when the play button is clicked.
     }
 
     // Other functionality that's important as fuck
