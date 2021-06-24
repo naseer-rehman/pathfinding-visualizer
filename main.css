@@ -11,10 +11,6 @@
                           supported by Chrome, Edge, Opera and Firefox */
 }
 
-.hidden { 
-    display: none;
-}
-
 body {
     margin: 0;
     padding: 0;
@@ -491,5 +487,42 @@ div.clear-prompt {
     font-weight: bold;
 }
 
+
+/* NOTIFICATION CONTAINER STYLING */
+
+.notifications-container {
+    width: 35vw;
+    height: 25%;
+    background-color: rgba(200,200,200,0);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.notification {
+    background-color: var(--toolbar-color);
+    border-radius: 12px;
+    display: inline-block;
+    max-width: 600px;
+    position: absolute;
+    bottom: 10px;
+}
+
+.notification-content {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    color: var(--prompt-text-color);
+    font-size: 1.5rem;
+    margin: 25px 35px;
+    padding: 0;
+}
+
+.hidden { 
+    display: none;
+}
 
 /* ------------------ ANIMATIONS ------------------ */

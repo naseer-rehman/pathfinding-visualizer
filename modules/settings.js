@@ -5,8 +5,8 @@ export default class Settings {
         DIJKSTRA : 0,
         A_STAR : 1
     }
-    static algorithm = "dijkstra";
-    static playbackMode = "auto";
+    static algorithm = "Dijkstra";
+    static playbackMode = "Auto";
     static playbackSpeed = 1.0;
 
     static setPlaybackMode(mode) {

@@ -59,20 +59,20 @@ export default class PlacingGoalTileState {
         if (actionType === "mousedown") {
             let hoveringElement = document.elementFromPoint(eventInfo.clientX, eventInfo.clientY);
             let virtualCanvas = Screen.virtualCanvas;
-            if (hoveringElement === canvas) {
-                let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(new Vector2(eventInfo.clientX, eventInfo.clientY));
-                let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
-                if (eventInfo.button == 0 && hoverTile.type === "blank") {
-                    resetPreviousGoalTile();
-                    Screen.goalTilePosition = hoverTileCoordinate;
-                    virtualCanvas.setTileColor(Screen.goalTilePosition.X, Screen.goalTilePosition.Y, 
-                        TILE_COLOR, TILE_ALPHA);
-                    hoverTile.setIcon(this.goalTileIcon);
-                    hoverTile.type = "goal";
-                } else if (eventInfo.button == 2 && hoverTileCoordinate.equals(Screen.goalTilePosition)) {
-                    resetPreviousGoalTile();
-                    hoverTile.type = "blank";
-                }
+            if (Screen.isElementDescendantOf(hoveringElement, Screen.mainToolbar)) 
+            return;
+            let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(new Vector2(eventInfo.clientX, eventInfo.clientY));
+            let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
+            if (eventInfo.button == 0 && hoverTile.type === "blank") {
+                resetPreviousGoalTile();
+                Screen.goalTilePosition = hoverTileCoordinate;
+                virtualCanvas.setTileColor(Screen.goalTilePosition.X, Screen.goalTilePosition.Y, 
+                    TILE_COLOR, TILE_ALPHA);
+                hoverTile.setIcon(this.goalTileIcon);
+                hoverTile.type = "goal";
+            } else if (eventInfo.button == 2 && hoverTileCoordinate.equals(Screen.goalTilePosition)) {
+                resetPreviousGoalTile();
+                hoverTile.type = "blank";
             }
         }
     }

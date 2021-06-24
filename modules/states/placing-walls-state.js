@@ -52,8 +52,10 @@ export default class PlacingWallsState {
         let hoveringElement = document.elementFromPoint(mousePos.X, mousePos.Y);
         let virtualCanvas = Screen.virtualCanvas;
         let canvas = Screen.canvas;
+        if (Screen.isElementDescendantOf(hoveringElement, Screen.mainToolbar)) return;
+
         if (actionType === "mousedown") {
-            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+            if (virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
                 let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
                 let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
                 if (eventInfo.button == 0) { // Left mouse button
@@ -69,8 +71,7 @@ export default class PlacingWallsState {
                 }
                 // previousTilePos = hoverTilePos;
             }
-        } else if (actionType === "mousemove" && hoveringElement === canvas
-        && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+        } else if (actionType === "mousemove" && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
             let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
             let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
             if (Screen.isHoldingLMB && hoverTile.type === "blank") {

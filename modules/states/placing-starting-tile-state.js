@@ -4,8 +4,8 @@ import Grid from "/modules/grid.js";
 import Vector2 from "/modules/vector2.js";
 
 function resetPreviousStartTile() {
-    let pos = Screen.startingTilePosition;
     let virtualCanvas = Screen.virtualCanvas;
+    let pos = Screen.startingTilePosition;
     if (virtualCanvas.isTileCoordinatesOnGrid(pos.X, pos.Y)) {
         virtualCanvas.resetTileColor(pos.X, pos.Y);
         let previousStartTile = virtualCanvas.getTile(pos.X, pos.Y);
@@ -62,8 +62,10 @@ export default class PlacingStartingTileState {
         let mousePos = new Vector2(eventInfo.clientX, eventInfo.clientY);
         let hoveringElement = document.elementFromPoint(mousePos.X, mousePos.Y);
         let virtualCanvas = Screen.virtualCanvas;
-
-        if (actionType === "mousedown" && hoveringElement === canvas) {
+        if (Screen.isElementDescendantOf(hoveringElement, Screen.mainToolbar)) 
+            return;
+            
+        if (actionType === "mousedown") {
             let hoverTileCoordinate = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
             let hoverTile = virtualCanvas.getTile(hoverTileCoordinate.X, hoverTileCoordinate.Y);
             if (eventInfo.button == 0 && hoverTile.type === "blank") {

@@ -5,6 +5,7 @@ import PlacingWallsState from "./states/placing-walls-state.js";
 import PlacingGoalTileState from "./states/placing-goal-tile-state.js";
 import PlacingWeightTilesState from "./states/placing-weight-tiles-state.js";
 import PlacingStartingTileState from "./states/placing-starting-tile-state.js";
+import PlayingState from "./states/playing-state.js";
 
 export default class UserState {
     static idleState = new IdleState();
@@ -14,6 +15,7 @@ export default class UserState {
     static placingGoalTileState = new PlacingGoalTileState();
     static placingWeightTilesState = new PlacingWeightTilesState();
     static placingStartingTileState = new PlacingStartingTileState();
+    static playingState = new PlayingState();
     currentState = null;
     
     constructor() {

@@ -46,8 +46,11 @@ export default class PlacingWeightTilesState {
         let virtualCanvas = Screen.virtualCanvas;
         let mousePos = new Vector2(eventInfo.clientX, eventInfo.clientY);
 
+        if (Screen.isElementDescendantOf(hoveringElement, Screen.mainToolbar)) 
+            return;
+
         if (actionType === "mousedown") {
-            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+            if (virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
                 let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
                 let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
                 if (eventInfo.button == 0 && hoverTile.type === "blank") { // Left button
@@ -61,7 +64,7 @@ export default class PlacingWeightTilesState {
                 }
             }
         } else if (actionType === "mousemove") {
-            if (hoveringElement === canvas && virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
+            if (virtualCanvas.isScreenCoordinatesOnGrid(mousePos)) {
                 let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(mousePos);
                 let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
                 if (Screen.isHoldingLMB && hoverTile.type === "blank") {
@@ -82,6 +85,7 @@ export default class PlacingWeightTilesState {
         let virtualCanvas = Screen.virtualCanvas;
         let hoverTilePos = virtualCanvas.getTileCoordinateFromScreenCoordinate(Screen.currentMousePosition);
         let hoverTile = virtualCanvas.getTile(hoverTilePos.X, hoverTilePos.Y);
+        if (hoverTile === null) return;
         let topLeftCorner = virtualCanvas.getScreenCoordinateFromTileCoordinate(hoverTilePos);
         if (hoverTile.type === "blank") {
             this.currentAlphaValue += this.alphaChangeDirection * DELTA_ALPHA_PER_UPDATE;

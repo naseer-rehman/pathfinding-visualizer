@@ -10,6 +10,13 @@
     <script src="main.js" type="module" defer></script>
 </head>
 <body>
+    <div class="notifications-container" id="notificationContainer">
+        <div class="notification hidden no-select" id="notificationTemplate">
+            <p class="notification-content">
+                bruh wtf u didnt even select something wtffff
+            </p>
+        </div>
+    </div>
     <canvas id="canvas"></canvas>
     <div id="mainToolbar" class="main-toolbar">
         <button id="toolbarOpener" class="toolbar-opener">
@@ -157,6 +164,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="information-prompt hidden">
+        <!-- I will complete this when I actually get this stuff working... not a priority at all -->
     </div>
 </body>
 </html>

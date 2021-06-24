@@ -7,6 +7,9 @@ import Screen from "./modules/screen.js";
 import Grid from "./modules/grid.js";
 import UserState from "./modules/user-state.js";
 import Settings from "./modules/settings.js";
+import NotificationService from "./modules/notification-service.js";
+// import Deque from "./modules/data-structures/deque.js";
+// import Queue from "./modules/data-structures/queue.js";
 
 const canvas = document.getElementById("canvas");
 Screen.canvas = canvas;
@@ -327,10 +330,25 @@ function main() {
 
     Screen.buttons.playButton.onclick = () => {
         // Here is the logic for when the play button is clicked.
+        if (userState.current === UserState.playingState) {
+            userState.handleButtonInput(Screen.buttons.playButton, "click", UserState.idleState);
+        } else if (UserState.playingState.canEnterState()) {
+            userState.handleButtonInput(Screen.buttons.playButton, "click", UserState.playingState);
+        } else {
+            if (Screen.isGoalTilePlaced() == false) {
+                NotificationService.addNotification("bruh where is your <span style='color:rgb(255,100,100);'>goal tile</span>...");
+            }
+            if (Screen.isStartingTilePlaced() == false) {
+                NotificationService.addNotification("place ur <span style='color:rgb(100,210,100);'>starting tile</span> tf u doing");
+            }
+        }
     }
 
     // Other functionality that's important as fuck
     connectMouseEvents();
     setInterval(frameUpdate, Screen.FRAME_TIMING);
+
+    NotificationService.addNotification("HELLO!!!");
 }
+
 main();

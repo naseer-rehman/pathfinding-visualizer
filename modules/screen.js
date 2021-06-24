@@ -1,4 +1,6 @@
 import Vector2 from "./vector2.js";
+let mainToolbar = document.getElementById("mainToolbar");
+
 let playButton = document.getElementById("playButton");
 let speedScaleButton = document.getElementById("speedScaleButton");
 let skipBackwardButton = document.getElementById("skipBackwardButton");
@@ -40,8 +42,9 @@ export default class Screen {
     static isHoldingMMB;
     static isHoldingLMB;
     static canvas;
+    static mainToolbar = mainToolbar;
     static buttons = {playButton, speedScaleButton, skipBackwardButton, skipForwardButton, markerButton, goalButton, wallButton, weightButton, clearButton, settingsButton, infoButton, settingsCloseButton, clearCloseButton, clearWallsButton, clearEverythingButton};
-    static toolbarButtons = {playButton, speedScaleButton, skipBackwardButton, skipForwardButton, markerButton, goalButton, wallButton, weightButton, clearButton, settingsButton, infoButton};
+    static toolbarButtons = {playButton, speedScaleButton, markerButton, goalButton, wallButton, weightButton, clearButton, settingsButton, infoButton};
     static windows = {clearWindow, settingsWindow};
 
     static drawCenterReference() {
@@ -71,5 +74,25 @@ export default class Screen {
                 return true;
             }
         }
+    }
+
+    static isElementDescendantOf(element, ancestor) {
+        while (element && element.parentElement) {
+            if (element === ancestor) {
+                return true;
+            }
+            element = element.parentElement;
+        }
+        return false;
+    }
+
+    static isGoalTilePlaced() {
+        let endPos = Screen.goalTilePosition;
+        return Screen.virtualCanvas.isTileCoordinatesOnGrid(endPos.X, endPos.Y);
+    }
+
+    static isStartingTilePlaced() {
+        let startPos = Screen.startingTilePosition;
+        return Screen.virtualCanvas.isTileCoordinatesOnGrid(startPos.X, startPos.Y);
     }
 }
