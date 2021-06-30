@@ -15,11 +15,11 @@ export default class PlayingState {
     playButton = Screen.buttons.playButton;
     skipForwardButton = Screen.buttons.skipForwardButton;
     skipBackwardButton = Screen.buttons.skipBackwardButton;
-    playing = false;
-    playbackTrack = null;
-    currentStep = -1;
 
     constructor() {
+        this.currentStep = -1;
+        this.playing = false;
+        this.playbackTrack = null;
         this.playbackGrid = null;
     }
 
@@ -48,6 +48,7 @@ export default class PlayingState {
 
     enter() {
         this.currentStep = -1;
+        this.playButton.classList.add("active-button");
         if (this.playbackGrid === null) {
             this.playbackGrid = new Grid(Screen.CANVAS_SIZE.X, Screen.CANVAS_SIZE.Y); //
         }
@@ -95,6 +96,7 @@ export default class PlayingState {
             this.skipForwardButton.onclick = null;
         }
         
+        this.playButton.classList.remove("active-button");
         this.playing = false;
         console.log("exited playing state");
     }

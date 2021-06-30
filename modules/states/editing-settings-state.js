@@ -14,6 +14,7 @@ export default class EditingSettingsState {
     
     enter() {
         this.window.classList.remove("hidden");
+        this.openButton.classList.add("active-button");
         this.isWindowOpen = true;
         let dropdowns = this.window.querySelectorAll(".dropdown");
         for (let i = 0; i < dropdowns.length; ++i) {
@@ -72,6 +73,7 @@ export default class EditingSettingsState {
             this.currentOpenDropdown = null;
         }
         this.window.classList.add("hidden");
+        this.openButton.classList.remove("active-button");
         this.isWindowOpen = false;
     }
 

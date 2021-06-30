@@ -7,11 +7,13 @@ export default class ClearState {
     
     enter() {
         Screen.windows.clearWindow.classList.remove("hidden");
+        Screen.buttons.clearButton.classList.add("active-button");
         this.windowOpen = true;
     }
 
     exit() {
         Screen.windows.clearWindow.classList.add("hidden");
+        Screen.buttons.clearButton.classList.remove("active-button");
         this.windowOpen = false;
     }
 
