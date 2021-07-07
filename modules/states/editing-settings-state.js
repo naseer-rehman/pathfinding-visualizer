@@ -91,6 +91,10 @@ export default class EditingSettingsState {
         }
     }
 
+    toString() {
+        return "EditingSettingsState";
+    }
+
     handleMouseInput(eventInfo, actionType) {}
     frameUpdate() {}
 }

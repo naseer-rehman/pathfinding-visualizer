@@ -102,4 +102,8 @@ export default class PlacingWallsState {
             Screen.ctx.fillRect(topLeftCorner.X + 2, topLeftCorner.Y + 2, Screen.TILE_SIZE - 4, Screen.TILE_SIZE - 4);
         }
     }
+
+    toString() {
+        return "PlacingWallsState";
+    }
 }

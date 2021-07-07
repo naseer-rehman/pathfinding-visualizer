@@ -99,4 +99,8 @@ export default class PlacingGoalTileState {
             Screen.ctx.globalAlpha = oldGlobalAlpha;
         }
     }
+    
+    toString() {
+        return "PlacingGoalTileState";
+    }
 }

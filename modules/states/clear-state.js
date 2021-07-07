@@ -38,6 +38,10 @@ export default class ClearState {
         }
     }
 
+    toString() {
+        return "ClearState";
+    }
+
     handleMouseInput(eventInfo, actionType) {}
     frameUpdate() {}
 }

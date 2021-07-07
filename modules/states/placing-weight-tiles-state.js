@@ -2,10 +2,10 @@ import Screen from "/modules/screen.js";
 import Vector2 from "/modules/vector2.js";
 import Color3 from "/modules/color3.js";
 
-let TILE_COLOR = new Color3(80,80,255);
-let TILE_ALPHA = 0.5;
+let TILE_COLOR = new Color3(80,80,80);
+let TILE_ALPHA = 0.1;
 const FLASH_TIME = 1200; // milliseconds
-const TARGET_ALPHA_VALUE = 0.2;
+const TARGET_ALPHA_VALUE = TILE_ALPHA;
 const DELTA_ALPHA_PER_UPDATE = TARGET_ALPHA_VALUE / FLASH_TIME * Screen.FRAME_TIMING; // alpha value delta per frame
 
 export default class PlacingWeightTilesState {
@@ -103,5 +103,9 @@ export default class PlacingWeightTilesState {
             Screen.ctx.drawImage(this.weightTileIcon, topLeftCorner.X + Screen.ICON_CORNER_OFFSET, topLeftCorner.Y + Screen.ICON_CORNER_OFFSET);
             Screen.ctx.globalAlpha = oldGlobalAlpha;
         }
+    }
+
+    toString() {
+        return "PlacingWeightTileState";
     }
 }

@@ -5,4 +5,8 @@ export default class IdleState {
     frameUpdate() {
 
     }
+
+    toString() {
+        return "IdleState";
+    }
 }

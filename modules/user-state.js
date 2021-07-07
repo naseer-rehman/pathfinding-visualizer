@@ -25,6 +25,7 @@ export default class UserState {
     
 
     handleButtonInput(button, actionType, nextState = this.currentState) {
+        console.log(`${this.currentState.toString()} -> ${nextState.toString()}`);
         this.currentState.handleButtonInput(button, actionType);
         // I might need to check if the current state permits a change in state.
         if (nextState !== this.currentState) {

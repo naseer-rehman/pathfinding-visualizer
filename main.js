@@ -330,9 +330,11 @@ function main() {
 
     Screen.buttons.playButton.onclick = () => {
         // Here is the logic for when the play button is clicked.
-        if (userState.current === UserState.playingState) {
+        if (userState.currentState === UserState.playingState) {
+            console.log("entering idle state");
             userState.handleButtonInput(Screen.buttons.playButton, "click", UserState.idleState);
         } else if (UserState.playingState.canEnterState()) {
+            console.log("entering the playing state i guess");
             userState.handleButtonInput(Screen.buttons.playButton, "click", UserState.playingState);
         } else {
             if (Screen.isGoalTilePlaced() == false) {

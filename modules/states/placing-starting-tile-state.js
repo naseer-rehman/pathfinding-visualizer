@@ -102,4 +102,8 @@ export default class PlacingStartingTileState {
             Screen.ctx.globalAlpha = oldGlobalAlpha;
         }
     }
+
+    toString() {
+        return "PlacingStartingTileState";
+    }
 }

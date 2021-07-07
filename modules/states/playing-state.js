@@ -3,6 +3,11 @@ import Settings from "/modules/settings.js";
 import Grid from "/modules/grid.js";
 import StepTrack from "/modules/step-track.js";
 import Vector2 from "/modules/vector2.js";
+import PlaybackTrack from "../data-structures/playback-track.js";
+import PlaybackUpdate from "../data-structures/playback-update.js";
+import Tile from "../tile.js";
+import Color3 from "../color3.js";
+import Dijkstra from "../algorithms/dijkstra.js";
 
 const STEPS_PER_SECOND = 2;
 
@@ -29,20 +34,26 @@ export default class PlayingState {
     }
 
     skipForward() {
-        if (-1 <= this.currentStep && this.currentStep + 1 < this.playbackTrack.getStepCount()) {
-            this.currentStep++;
-            let update = this.playbackTrack.getStep(this.currentStep);
-            let updateTile = update[0];
-            let updatePos = update[1];
-            this.playbackGrid.setTileColor(updatePos.X, updatePos.Y, updateTile.color, updateTile.alpha);
+        // if (-1 <= this.currentStep && this.currentStep + 1 < this.playbackTrack.getStepCount()) {
+        //     this.currentStep++;
+        //     let update = this.playbackTrack.getStep(this.currentStep);
+        //     let updateTile = update[0];
+        //     let updatePos = update[1];
+        //     this.playbackGrid.setTileColor(updatePos.X, updatePos.Y, updateTile.color, updateTile.alpha);
+        // }
+        if (this.playbackTrack !== null) {
+            this.playbackTrack.stepForward();
         }
     }
 
     skipBackward() {
-        if (0 <= this.currentStep && this.currentStep < this.playbackTrack.getStepCount()) {
-            let updatePos = this.playbackTrack.getStep(this.currentStep)[1];
-            this.playbackGrid.resetTileColor(updatePos.X, updatePos.Y);
-            this.currentStep--;
+        // if (0 <= this.currentStep && this.currentStep < this.playbackTrack.getStepCount()) {
+        //     let updatePos = this.playbackTrack.getStep(this.currentStep)[1];
+        //     this.playbackGrid.resetTileColor(updatePos.X, updatePos.Y);
+        //     this.currentStep--;
+        // }
+        if (this.playbackTrack !== null) {
+            this.playbackTrack.stepBackward();
         }
     }
 
@@ -58,8 +69,24 @@ export default class PlayingState {
         centerTilePos.Y = Math.floor(centerTilePos.Y / 2);
 
         // Create playback track
-        
+        let dijkstra = new Dijkstra(Screen.virtualCanvas);
+        // let anyNonZero = false;
+        // for (let r = 0; r < dijkstra.edgeList.length; ++r) {
+        //     for (let c = 0; c < dijkstra.edgeList[r].length; ++c) {
+        //         if (dijkstra.edgeList[r][c].length != 0) {
+        //             anyNonZero = true;
+        //             console.log(dijkstra.edgeList[r][c]);
+        //         }
+        //     }
+        // }
+        // console.log((!anyNonZero) ? "bruh no non zero length edges" : "found some");
+        // for (let r = 0; r < dijkstra.edgeList.length; ++r) {
+        //     console.log(dijkstra.isVisited[r]);
+        // }
+        this.playbackTrack = dijkstra.createPlaybackTrack();
+
         // If step mode, enable step buttons
+        this.playbackTrack.setGrid(this.playbackGrid);
         if (Settings.getPlaybackMode() === "Step") {
             this.skipForwardButton.classList.remove("disabled-button");
             this.skipBackwardButton.classList.remove("disabled-button");
@@ -69,10 +96,12 @@ export default class PlayingState {
             this.skipBackwardButton.onclick = () => {
                 this.skipBackward();
             };
+        } else if (Settings.getPlaybackMode() === "Auto") {
+            this.playbackTrack.play();
         }
         // Change playbutton icon
         this.playing = true;
-        console.log("entered playing state");
+        // console.log("entered playing state");
     }
 
     exit() {
@@ -86,6 +115,7 @@ export default class PlayingState {
             }
         }
         // Remove playback track
+        this.playbackTrack.stop();
         this.playbackTrack = null;
         // Change the play button icon back to the play icon
         // Disable the step buttons
@@ -98,7 +128,7 @@ export default class PlayingState {
         
         this.playButton.classList.remove("active-button");
         this.playing = false;
-        console.log("exited playing state");
+        // console.log("exited playing state");
     }
 
     handleButtonInput(button, actionType) {
@@ -119,5 +149,9 @@ export default class PlayingState {
 
     frameUpdate() {
         this.playbackGrid.drawTiles();
+    }
+
+    toString() {
+        return "PlayingState";
     }
 }
