@@ -3,6 +3,12 @@ import Settings from "/modules/settings.js";
 import Vector2 from "/modules/vector2.js";
 import PlaybackUpdate from "/modules/data-structures/playback-update.js";
 
+// Changes that need to be made:
+// * For each update, I should keep track of the tile information
+//   for each tile that is to be updated.
+//   That way, if I step backward in playback, I can revert the changes properly rather
+//   than just resetting the tile and making it blank again.
+
 export default class PlaybackTrack {
     constructor() {
         this.updates = [];

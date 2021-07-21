@@ -3,7 +3,7 @@ import Color3 from "/modules/color3.js";
 import Grid from "/modules/grid.js";
 import Vector2 from "/modules/vector2.js";
 
-const TILE_COLOR = new Color3(80,80,255);
+const TILE_COLOR = new Color3(17, 17, 128);
 const TILE_ALPHA = 0.5;
 const FLASH_TIME = 1200; // milliseconds
 const TARGET_ALPHA_VALUE = 0.2;

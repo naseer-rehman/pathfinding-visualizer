@@ -7,8 +7,12 @@ import PlaybackTrack from "../data-structures/playback-track.js";
 import PlaybackUpdate from "../data-structures/playback-update.js";
 import Tile from "../tile.js";
 import Color3 from "../color3.js";
-import Dijkstra from "../algorithms/dijkstra.js";
 
+// algorithms
+import Dijkstra from "../algorithms/dijkstra.js";
+import A_Star from "../algorithms/a_star.js";
+
+// constants
 const STEPS_PER_SECOND = 2;
 
 /*
@@ -69,21 +73,19 @@ export default class PlayingState {
         centerTilePos.Y = Math.floor(centerTilePos.Y / 2);
 
         // Create playback track
-        let dijkstra = new Dijkstra(Screen.virtualCanvas);
-        // let anyNonZero = false;
-        // for (let r = 0; r < dijkstra.edgeList.length; ++r) {
-        //     for (let c = 0; c < dijkstra.edgeList[r].length; ++c) {
-        //         if (dijkstra.edgeList[r][c].length != 0) {
-        //             anyNonZero = true;
-        //             console.log(dijkstra.edgeList[r][c]);
-        //         }
-        //     }
-        // }
-        // console.log((!anyNonZero) ? "bruh no non zero length edges" : "found some");
-        // for (let r = 0; r < dijkstra.edgeList.length; ++r) {
-        //     console.log(dijkstra.isVisited[r]);
-        // }
-        this.playbackTrack = dijkstra.createPlaybackTrack();
+        let algorithmObj = null;
+        switch(Settings.getAlgorithm()) {
+            case "Dijkstra":
+                algorithmObj = new Dijkstra(Screen.virtualCanvas);
+                break;
+            case "A*":
+                algorithmObj = new A_Star(Screen.virtualCanvas);
+                break;
+            default:
+                console.error("Invalid algorithm");
+        }
+        
+        this.playbackTrack = algorithmObj.createPlaybackTrack();
 
         // If step mode, enable step buttons
         this.playbackTrack.setGrid(this.playbackGrid);

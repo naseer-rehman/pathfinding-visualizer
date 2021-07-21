@@ -8,11 +8,12 @@ import Tile from "/modules/tile.js";
 
 const WEIGHT_TILE_COST = 10;
 const DEFAULT_COST = 1;
-const TRAVERSAL_TILE = new Tile(100,200,255,1);
-const TRAVERSAL_ANIMATION_TIME = 25;
-const PATH_TILE = new Tile(100,200,100,1);
-const PATH_ANIMATION_TIME = 10;
+const TRAVERSAL_TILE = new Tile(91, 166, 207,1);
+const TRAVERSAL_ANIMATION_TIME = 10;
+const PATH_TILE = new Tile(209, 203, 23,1);
+const PATH_ANIMATION_TIME = 5;
 const TYPES_WITH_EDGES = ["weight", "goal", "start", "blank"];
+const UPDATES_PER_STEP = 5;
 export default class Dijkstra {
     grid = null;
     edgeList = []; // 2D array [y][x] returns neighbour tiles of Tile(x,y)
@@ -131,6 +132,7 @@ export default class Dijkstra {
         console.log("creating playback track");
         let grid = this.grid;
         let track = new PlaybackTrack();
+        let currentStepUpdateCount = 0;
 
         const startPos = Screen.startingTilePosition;
         const goalPos = Screen.goalTilePosition;
@@ -160,6 +162,11 @@ export default class Dijkstra {
                         let update = new PlaybackUpdate();
                         update.setAnimationTime(TRAVERSAL_ANIMATION_TIME);
                         update.pushTileUpdate([TRAVERSAL_TILE, edgePos]);
+                        ++currentStepUpdateCount;
+                        if (currentStepUpdateCount == UPDATES_PER_STEP) {
+                            update.setEndOfStep(true);
+                            currentStepUpdateCount = 0;
+                        }
                         track.pushUpdate(update);
                         this.traversed[edgePos.Y][edgePos.X] = true;
                     }
