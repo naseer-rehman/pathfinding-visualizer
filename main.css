@@ -64,15 +64,16 @@ div.main-toolbar.closed {
 }
 
 div.main-toolbar {
-    position: fixed;
+	position: fixed;
     height: 96px;
-    width: 805px;
+    /* width: 805px; */
     background-color: var(--toolbar-color);
     border-radius: 15px 15px 0 0;
     border: 1px solid #707070;
     bottom: -1px;
     transform: translate(calc(50vw - 50%), calc(0% + 1px));
     transition: transform 0.5s;
+	padding: 0 20px;
 }
 
 
@@ -131,10 +132,10 @@ div.playback-buttons-container {
 }
 
 div.buttons {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+	position: relative;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
     width: 100%;
     display: flex;
     align-items: center;
