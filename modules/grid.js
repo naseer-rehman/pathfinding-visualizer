@@ -1,11 +1,15 @@
+import Loader from "./loader.js";
 import Color3 from "./color3.js";
 import Vector2 from "./vector2.js";
 import Tile from "./tile.js";
 import Screen from "./screen.js";
 
+await Loader.waitUntilLoad();
+
 // Constants
 const GRID_BORDER_COLOR = getComputedStyle(document.body).getPropertyValue("--grid-background");
 const GRID_LINE_COLOR = getComputedStyle(document.body).getPropertyValue("--grid-line-color");
+console.log("Loaded grid colors:", GRID_BORDER_COLOR, GRID_LINE_COLOR);
 
 export default class Grid {
     topLeftCorner = new Vector2();

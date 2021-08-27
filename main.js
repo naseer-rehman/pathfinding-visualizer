@@ -1,6 +1,6 @@
 // This is a program that draws graphics for a path-finding visualizer, made by Naseer Rehman.
 // Very hard to make, for me.
-
+import Loader from "./modules/loader.js";
 import Color3 from "./modules/color3.js";
 import Vector2 from "./modules/vector2.js";
 import Screen from "./modules/screen.js";
@@ -8,8 +8,8 @@ import Grid from "./modules/grid.js";
 import UserState from "./modules/user-state.js";
 import Settings from "./modules/settings.js";
 import NotificationService from "./modules/notification-service.js";
-// import Deque from "./modules/data-structures/deque.js";
-// import Queue from "./modules/data-structures/queue.js";
+
+await Loader.waitUntilLoad();
 
 const canvas = document.getElementById("canvas");
 Screen.canvas = canvas;
