@@ -346,7 +346,7 @@ function main() {
         }
     }
 
-    // Other functionality that's important as fuck
+    // Other functionality that's important af
     connectMouseEvents();
     setInterval(frameUpdate, Screen.FRAME_TIMING);
 
