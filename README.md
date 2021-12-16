@@ -17,4 +17,4 @@ When placing any tile:
  - Right click to remove a single tile
  - For walls and weights, hold left click to place multiple tiles and hold right click to remove multiple tiles
 
-Press play and watch the algorithm do its work
+Press play and watch the algorithm do its work. Try it out [here](http://naseers-pathfinder.herokuapp.com/) (takes a second to boot up).
