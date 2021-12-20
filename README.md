@@ -1,6 +1,6 @@
 # Pathfinding Visualizer
 ## About
-This is a web-based pathfinding algorithm visualizer which will (hopefully) include a lot of popular pathfinding algorithms.
+A web-based pathfinding algorithm visualizer.
 
 Current included algorithm(s):
  * Dijkstra's algorithm
