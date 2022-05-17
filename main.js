@@ -338,10 +338,10 @@ function main() {
             userState.handleButtonInput(Screen.buttons.playButton, "click", UserState.playingState);
         } else {
             if (Screen.isGoalTilePlaced() == false) {
-                NotificationService.addNotification("bruh where is your <span style='color:rgb(255,100,100);'>goal tile</span>...");
+                NotificationService.addNotification("place the <span style='color:rgb(255,100,100);'>goal tile</span>...");
             }
             if (Screen.isStartingTilePlaced() == false) {
-                NotificationService.addNotification("place ur <span style='color:rgb(100,210,100);'>starting tile</span> tf u doing");
+                NotificationService.addNotification("place the <span style='color:rgb(100,210,100);'>starting tile</span>...");
             }
         }
     }
