@@ -1,7 +1,7 @@
-import Screen from "/modules/screen.js";
-import Settings from "/modules/settings.js";
-import Vector2 from "/modules/vector2.js";
-import PlaybackUpdate from "/modules/data-structures/playback-update.js";
+import Screen from "../screen.js";
+import Settings from "../settings.js";
+import Vector2 from "../vector2.js";
+import PlaybackUpdate from "../data-structures/playback-update.js";
 
 // Changes that need to be made:
 // * For each update, I should keep track of the tile information

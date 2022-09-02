@@ -1,6 +1,7 @@
-import Screen from "/modules/screen.js";
-import Vector2 from "/modules/vector2.js";
-import Color3 from "/modules/color3.js";
+import Screen from "../screen.js";
+import Vector2 from "../vector2.js";
+import Color3 from "../color3.js";
+import TargetPNG from "../../images/target-PNG.png";
 
 function resetPreviousGoalTile() {
     if (Screen.virtualCanvas.isTileCoordinatesOnGrid(Screen.goalTilePosition.X, Screen.goalTilePosition.Y)) {
@@ -27,7 +28,7 @@ export default class PlacingGoalTileState {
         this.currentAlphaValue = TARGET_ALPHA_VALUE;
         this.alphaChangeDirection = 1;
         this.goalTileIcon = new Image();
-        this.goalTileIcon.src = "images/target-PNG.png";
+        this.goalTileIcon.src = TargetPNG;
     }
 
     enter() {

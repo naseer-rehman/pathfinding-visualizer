@@ -1,6 +1,7 @@
-import Screen from "/modules/screen.js";
-import Vector2 from "/modules/vector2.js";
-import Color3 from "/modules/color3.js";
+import Screen from "../screen.js";
+import Vector2 from "../vector2.js";
+import Color3 from "../color3.js";
+import WeightPNG from "../../images/weight-PNG.png";
 
 let TILE_COLOR = new Color3(80,80,80);
 let TILE_ALPHA = 0.1;
@@ -15,7 +16,7 @@ export default class PlacingWeightTilesState {
         this.currentAlphaValue = TARGET_ALPHA_VALUE;
         this.alphaChangeDirection = 1;
         this.weightTileIcon = new Image();
-        this.weightTileIcon.src = "images/weight-PNG.png";
+        this.weightTileIcon.src = WeightPNG;
     }
 
     enter() {

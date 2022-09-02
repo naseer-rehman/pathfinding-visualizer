@@ -1,7 +1,8 @@
-import Screen from "/modules/screen.js";
-import Color3 from "/modules/color3.js";
-import Grid from "/modules/grid.js";
-import Vector2 from "/modules/vector2.js";
+import Screen from "../screen.js";
+import Color3 from "../color3.js";
+import Grid from "../grid.js";
+import Vector2 from "../vector2.js";
+import MarkerPNG from "../../images/marker-PNG.png"
 
 function resetPreviousStartTile() {
     let virtualCanvas = Screen.virtualCanvas;
@@ -27,7 +28,7 @@ export default class PlacingStartingTileState {
     placingTiles = false;
     constructor() {
         this.startingTileIcon = new Image();
-        this.startingTileIcon.src = "images/marker-PNG.png";
+        this.startingTileIcon.src = MarkerPNG;
         this.currentAlphaValue = TARGET_ALPHA_VALUE;
         this.alphaChangeDirection = 1;
     }

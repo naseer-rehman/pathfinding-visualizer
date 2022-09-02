@@ -1,7 +1,7 @@
-import Screen from "/modules/screen.js";
-import Color3 from "/modules/color3.js";
-import Grid from "/modules/grid.js";
-import Vector2 from "/modules/vector2.js";
+import Screen from "../screen.js";
+import Color3 from "../color3.js";
+import Grid from "../grid.js";
+import Vector2 from "../vector2.js";
 
 const TILE_COLOR = new Color3(17, 17, 128);
 const TILE_ALPHA = 0.5;

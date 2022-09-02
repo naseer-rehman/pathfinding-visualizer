@@ -1,10 +1,10 @@
-import Screen from "/modules/screen.js";
+import Screen from "../screen.js";
 // import Settings?
-import Grid from "/modules/grid.js";
-import Vector2 from "/modules/vector2.js";
-import PlaybackTrack from "/modules/data-structures/playback-track.js";
-import PlaybackUpdate from "/modules/data-structures/playback-update.js";
-import Tile from "/modules/tile.js";
+import Grid from "../grid.js";
+import Vector2 from "../vector2.js";
+import PlaybackTrack from "../data-structures/playback-track.js";
+import PlaybackUpdate from "../data-structures/playback-update.js";
+import Tile from "../tile.js";
 
 const WEIGHT_TILE_COST = 10;
 const DEFAULT_COST = 1;

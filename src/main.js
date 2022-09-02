@@ -1,5 +1,6 @@
 // This is a program that draws graphics for a path-finding visualizer, made by Naseer Rehman.
 // Very hard to make, for me.
+import "./main.css";
 import Loader from "./modules/loader.js";
 import Color3 from "./modules/color3.js";
 import Vector2 from "./modules/vector2.js";
@@ -8,6 +9,9 @@ import Grid from "./modules/grid.js";
 import UserState from "./modules/user-state.js";
 import Settings from "./modules/settings.js";
 import NotificationService from "./modules/notification-service.js";
+import MarkerPNG from "./images/marker-PNG.png";
+import TargetPNG from "./images/target-PNG.png";
+import WeightPNG from "./images/weight-PNG.png";
 
 await Loader.waitUntilLoad();
 
@@ -24,9 +28,9 @@ let startingTileIcon = new Image();
 let goalTileIcon = new Image();
 let weightTileIcon = new Image();
 
-startingTileIcon.src = "images/marker-PNG.png";
-goalTileIcon.src = "images/target-PNG.png";
-weightTileIcon.src = "images/weight-PNG.png";
+startingTileIcon.src = MarkerPNG;
+goalTileIcon.src = TargetPNG;
+weightTileIcon.src = WeightPNG;
 
 // CONSTANTS VARIABLES
 const DEFAULT_WEIGHT = 15; // Default weight for a weight tile.

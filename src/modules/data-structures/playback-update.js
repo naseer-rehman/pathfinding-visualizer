@@ -1,5 +1,5 @@
-import Tile from "/modules/tile.js";
-import Vector2  from "/modules/vector2.js";
+import Tile from "../tile.js";
+import Vector2  from "../vector2.js";
 
 export default class PlaybackUpdate {
     constructor() {

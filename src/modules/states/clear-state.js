@@ -1,4 +1,4 @@
-import Screen from "/modules/screen.js";
+import Screen from "../screen.js";
 
 export default class ClearState {
     constructor() {

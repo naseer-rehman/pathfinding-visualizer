@@ -1,5 +1,5 @@
-import Settings from "/modules/settings.js";
-import Screen from "/modules/screen.js";
+import Settings from "../settings.js";
+import Screen from "../screen.js";
 
 export default class EditingSettingsState {
     openButton = Screen.buttons.settingsButton;
