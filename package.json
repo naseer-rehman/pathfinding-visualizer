@@ -6,7 +6,7 @@
   "browser": "src/main.js",
   "scripts": {
     "build": "webpack --config ./webpack/webpack.prod.js",
-    "deploy": "echo \"Deployment command not set\"",
+    "deploy": "npm run build && node deploy.js",
     "start": "webpack server --open --config ./webpack/webpack.dev.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
